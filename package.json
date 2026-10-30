@@ -1,0 +1,13 @@
+{
+  "name": "pepso-parts",
+  "version": "1.0.0",
+  "description": "Website Katalog dan Pemesanan PEPSO PARTS - Kawasaki Ninja 2-Tak Specialist",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "cd frontend && npm run build",
+    "install:all": "cd frontend && npm install",
+    "db:seed": "php backend/bin/create-admin.php"
+  }
+}
+
