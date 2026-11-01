@@ -17,12 +17,15 @@ use Pepso\Controllers\HealthController;
 use Pepso\Controllers\MasterDataController;
 use Pepso\Controllers\ProductController;
 use Pepso\Controllers\SettingsController;
+use Pepso\Controllers\OrderController;
 
 use Pepso\Controllers\AdminAuthController;
 use Pepso\Controllers\AdminDashboardController;
 use Pepso\Controllers\AdminProductController;
 use Pepso\Controllers\AdminMasterController;
 use Pepso\Controllers\AdminSettingsController;
+use Pepso\Controllers\AdminOrderController;
+use Pepso\Controllers\AdminReportController;
 
 // 1. Muat konfigurasi .env
 Config::load(__DIR__ . '/../.env');
@@ -49,6 +52,11 @@ $router->get('/api/products/{slugOrCode}', [ProductController::class, 'show']);
 $router->get('/api/products', [ProductController::class, 'index']);
 $router->get('/api/share/{slug}', [ProductController::class, 'shareOg']);
 
+// Pemesanan Publik & Pelacakan
+$router->post('/api/cart/validate', [OrderController::class, 'validateCart']);
+$router->post('/api/orders', [OrderController::class, 'createOrder']);
+$router->get('/api/orders/{code}', [OrderController::class, 'trackOrder']);
+
 // ─────────────────────────────────────────────────────────────
 // RUTE ADMIN - AUTENTIKASI
 // ─────────────────────────────────────────────────────────────
@@ -61,11 +69,18 @@ $router->put('/api/admin/password', [AdminAuthController::class, 'changePassword
 // RUTE ADMIN - DASHBOARD & BADGE
 // ─────────────────────────────────────────────────────────────
 $router->get('/api/admin/dashboard', [AdminDashboardController::class, 'index'], [AuthMiddleware::class]);
-$router->get('/api/admin/orders/count-new', function (Request $request) {
-    $db = Database::getConnection();
-    $cnt = (int)$db->query("SELECT COUNT(*) FROM orders WHERE status = 'new'")->fetchColumn();
-    Response::json(['count' => $cnt]);
-}, [AuthMiddleware::class]);
+$router->get('/api/admin/orders/count-new', [AdminOrderController::class, 'countNew'], [AuthMiddleware::class]);
+
+// ─────────────────────────────────────────────────────────────
+// RUTE ADMIN - KELOLA PESANAN & LAPORAN
+// ─────────────────────────────────────────────────────────────
+$router->get('/api/admin/orders', [AdminOrderController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/api/admin/orders/{id}', [AdminOrderController::class, 'show'], [AuthMiddleware::class]);
+$router->patch('/api/admin/orders/{id}/status', [AdminOrderController::class, 'updateStatus'], [AuthMiddleware::class, CsrfMiddleware::class]);
+$router->patch('/api/admin/orders/{id}/note', [AdminOrderController::class, 'updateNote'], [AuthMiddleware::class, CsrfMiddleware::class]);
+
+$router->get('/api/admin/reports/stock', [AdminReportController::class, 'stockReport'], [AuthMiddleware::class]);
+$router->get('/api/admin/reports/orders', [AdminReportController::class, 'salesReport'], [AuthMiddleware::class]);
 
 // ─────────────────────────────────────────────────────────────
 // RUTE ADMIN - KELOLA PRODUK & FOTO

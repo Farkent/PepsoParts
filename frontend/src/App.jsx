@@ -8,6 +8,9 @@ import NotFoundPage from './pages/public/NotFoundPage';
 const ProductDetailPage = lazy(() => import('./pages/public/ProductDetailPage'));
 const AboutPage         = lazy(() => import('./pages/public/AboutPage'));
 const ContactPage       = lazy(() => import('./pages/public/ContactPage'));
+const CartPage          = lazy(() => import('./pages/public/CartPage'));
+const CheckoutPage      = lazy(() => import('./pages/public/CheckoutPage'));
+const OrderTrackingPage = lazy(() => import('./pages/public/OrderTrackingPage'));
 
 // Lazy-load rute admin
 const AdminLayout       = lazy(() => import('./layouts/AdminLayout'));
@@ -18,6 +21,9 @@ const ProductFormPage   = lazy(() => import('./pages/admin/ProductFormPage'));
 const StockPage         = lazy(() => import('./pages/admin/StockPage'));
 const CategoriesPage    = lazy(() => import('./pages/admin/CategoriesPage'));
 const MotorTypesPage    = lazy(() => import('./pages/admin/MotorTypesPage'));
+const OrdersPage        = lazy(() => import('./pages/admin/OrdersPage'));
+const OrderDetailPage   = lazy(() => import('./pages/admin/OrderDetailPage'));
+const ReportsPage       = lazy(() => import('./pages/admin/ReportsPage'));
 const SettingsPage      = lazy(() => import('./pages/admin/SettingsPage'));
 
 function PageLoader() {
@@ -40,6 +46,9 @@ export default function App() {
           <Route path="/tentang" element={<AboutPage />} />
           <Route path="/kontak"  element={<ContactPage />} />
           <Route path="/produk/:slug" element={<ProductDetailPage />} />
+          <Route path="/keranjang" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/pesanan/:code" element={<OrderTrackingPage />} />
           <Route path="*"       element={<NotFoundPage />} />
         </Route>
 
@@ -55,8 +64,9 @@ export default function App() {
           <Route path="stok" element={<StockPage />} />
           <Route path="kategori" element={<CategoriesPage />} />
           <Route path="tipe-motor" element={<MotorTypesPage />} />
-          <Route path="pesanan" element={<DashboardPage />} />
-          <Route path="laporan" element={<DashboardPage />} />
+          <Route path="pesanan" element={<OrdersPage />} />
+          <Route path="pesanan/:id" element={<OrderDetailPage />} />
+          <Route path="laporan" element={<ReportsPage />} />
           <Route path="pengaturan" element={<SettingsPage />} />
         </Route>
       </Routes>

@@ -238,9 +238,10 @@ export default function DashboardPage() {
               </div>
             ) : (
               recentOrders.map((ord) => (
-                <div
+                <Link
                   key={ord.id}
-                  className="p-3 border border-neutral-100 rounded-sm bg-neutral-50/50 hover:bg-neutral-50 transition-colors"
+                  to={`/admin/pesanan/${ord.id}`}
+                  className="block p-3 border border-neutral-100 rounded-sm bg-neutral-50/50 hover:bg-neutral-100 transition-colors"
                 >
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span className="font-display text-brand">{ord.code}</span>
@@ -253,7 +254,7 @@ export default function DashboardPage() {
                       {ord.status.toUpperCase()}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>
