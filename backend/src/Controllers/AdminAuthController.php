@@ -130,3 +130,4 @@ class AdminAuthController
         Response::json(['message' => 'Kata sandi berhasil diperbarui.']);
     }
 }
+

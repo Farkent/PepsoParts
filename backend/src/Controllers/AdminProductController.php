@@ -380,3 +380,4 @@ class AdminProductController
         Response::json(['images' => $this->repo->getImages($id), 'message' => 'Gambar berhasil dihapus.']);
     }
 }
+

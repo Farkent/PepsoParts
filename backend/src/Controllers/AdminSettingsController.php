@@ -41,3 +41,4 @@ class AdminSettingsController
         Response::json($this->repo->getAll());
     }
 }
+
