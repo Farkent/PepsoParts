@@ -18,6 +18,7 @@ use Pepso\Controllers\MasterDataController;
 use Pepso\Controllers\ProductController;
 use Pepso\Controllers\SettingsController;
 use Pepso\Controllers\OrderController;
+use Pepso\Controllers\AiController;
 
 use Pepso\Controllers\AdminAuthController;
 use Pepso\Controllers\AdminDashboardController;
@@ -56,6 +57,11 @@ $router->get('/api/share/{slug}', [ProductController::class, 'shareOg']);
 $router->post('/api/cart/validate', [OrderController::class, 'validateCart']);
 $router->post('/api/orders', [OrderController::class, 'createOrder']);
 $router->get('/api/orders/{code}', [OrderController::class, 'trackOrder']);
+
+// Fitur AI Publik
+$router->post('/api/ai/chat', [AiController::class, 'chat']);
+$router->post('/api/ai/search', [AiController::class, 'search']);
+$router->post('/api/ai/compatibility', [AiController::class, 'compatibility']);
 
 // ─────────────────────────────────────────────────────────────
 // RUTE ADMIN - AUTENTIKASI
@@ -115,6 +121,9 @@ $router->delete('/api/admin/motor-types/{id}', [AdminMasterController::class, 'd
 
 $router->get('/api/admin/settings', [AdminSettingsController::class, 'getSettings'], [AuthMiddleware::class]);
 $router->put('/api/admin/settings', [AdminSettingsController::class, 'updateSettings'], [AuthMiddleware::class, CsrfMiddleware::class]);
+
+// AI Generator Admin
+$router->post('/api/admin/ai/describe-product', [AiController::class, 'describeProduct'], [AuthMiddleware::class, CsrfMiddleware::class]);
 
 // Dispatch request
 $request = new Request();

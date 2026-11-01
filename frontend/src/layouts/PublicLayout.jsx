@@ -5,6 +5,7 @@ import Logo from '../components/ui/Logo';
 import { useCart } from '../context/CartContext';
 import { useMotor } from '../context/MotorContext';
 import Button from '../components/ui/Button';
+import FloatingChat from '../components/chat/FloatingChat';
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -248,6 +249,9 @@ export default function PublicLayout() {
           </div>
         </div>
       )}
+
+      {/* Floating AI Chat Assistant */}
+      <FloatingChat />
     </div>
   );
 }

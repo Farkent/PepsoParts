@@ -6,6 +6,7 @@ import {
   adminCreateProduct,
   adminUpdateProduct,
   adminNextCode,
+  adminAiDescribeProduct,
   getCategories,
   getMotorTypes,
 } from '../../api/endpoints';
@@ -44,6 +45,34 @@ export default function ProductFormPage() {
 
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [generatingAiDesc, setGeneratingAiDesc] = useState(false);
+
+  const handleGenerateAiDescription = async () => {
+    setGeneratingAiDesc(true);
+    try {
+      const catObj = categories.find((c) => String(c.id) === String(formData.category_id));
+      const res = await adminAiDescribeProduct({
+        product_name: formData.name,
+        category_name: catObj?.name || '',
+        notes: formData.condition_note || formData.compat_notes || '',
+      });
+
+      if (res.data && res.data.success && res.data.data?.description) {
+        setFormData((prev) => ({
+          ...prev,
+          description: res.data.data.description,
+        }));
+        success('Draf deskripsi AI berhasil dibuat!');
+      } else {
+        toastError('Gagal membuat deskripsi AI.');
+      }
+    } catch (err) {
+      console.error('AI describe error:', err);
+      toastError('Terjadi kesalahan saat memproses deskripsi AI.');
+    } finally {
+      setGeneratingAiDesc(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([getCategories(), getMotorTypes()])
@@ -430,13 +459,26 @@ export default function ProductFormPage() {
 
         {/* Card 5: Deskripsi */}
         <div className="bg-white border border-neutral-200 p-5 rounded-sm shadow-subtle space-y-4">
-          <h2 className="font-display font-bold uppercase text-base text-ink pb-2 border-b border-neutral-100">
-            5. Deskripsi Lengkap
-          </h2>
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+            <h2 className="font-display font-bold uppercase text-base text-ink">
+              5. Deskripsi Lengkap
+            </h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              icon={Sparkles}
+              loading={generatingAiDesc}
+              onClick={handleGenerateAiDescription}
+              className="text-xs"
+            >
+              Buat Draf dengan AI
+            </Button>
+          </div>
 
           <Textarea
             label="Deskripsi Produk"
-            rows={4}
+            rows={5}
             placeholder="Tuliskan spesifikasi detail fisik, kelengkapan, riwayat copotan motor..."
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}

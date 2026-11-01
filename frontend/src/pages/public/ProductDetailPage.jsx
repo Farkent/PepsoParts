@@ -256,7 +256,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Peringatan Kecocokan Motor Saya */}
-          {selectedMotor && compatStatus !== 'unknown' && (
+          {selectedMotor && compatStatus !== 'unknown' ? (
             <div className={`p-3 border rounded-sm flex gap-3 items-start text-sm ${
               compatStatus === 'compatible'
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
@@ -278,6 +278,30 @@ export default function ProductDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="p-3 border border-neutral-200 bg-neutral-50 rounded-sm text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-ink flex items-center gap-1.5">
+                  <Bike className="w-3.5 h-3.5 text-brand" />
+                  Cek Kecocokan dengan Motor Anda:
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {motorTypes.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => selectMotor(m)}
+                    className="px-2.5 py-1 bg-white border border-neutral-300 hover:border-brand text-ink text-[11px] rounded-sm transition-colors font-medium"
+                  >
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-text">
+                Pilih motormu untuk langsung memverifikasi apakah part ini Plug and Play (PNP).
+              </p>
             </div>
           )}
 

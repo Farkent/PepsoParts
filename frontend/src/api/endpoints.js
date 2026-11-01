@@ -86,6 +86,5 @@ export const adminGetOrderReport   = (params = {}) => {
   return api.get('/admin/reports/orders' + (qs ? '?' + qs : ''));
 };
 
-export const adminAiDescribeProduct = (formData) =>
-  api.post('/admin/ai/describe-product', formData, { headers: {} });
+export const adminAiDescribeProduct = (data) => api.post('/admin/ai/describe-product', data);
 
