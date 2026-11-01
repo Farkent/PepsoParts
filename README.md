@@ -122,3 +122,4 @@ Panduan lengkap pengunggahan ke shared hosting Apache terdapat di [docs/DEPLOY.m
 - `docs/PANDUAN_ADMIN.md` : Buku panduan praktis pemilik toko.
 - `docs/UAT_CHECKLIST.md` : Lembar uji terima sistem (UAT).
 - `docs/UAT_AI_TESTSET.md` : 30 skenario pengujian kecerdasan buatan.
+

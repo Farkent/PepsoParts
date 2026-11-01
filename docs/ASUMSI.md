@@ -23,3 +23,4 @@ Dokumen ini mencatat asumsi-asumsi teknis dan fungsional yang diambil selama pen
 ### 5. Aturan Ketersediaan & Soft Delete
 - Produk dengan `stock = 0` otomatis berstatus `sold`.
 - Penghapusan produk bersifat soft-delete (`deleted_at`), dan backend menolak penghapusan produk jika masih terdapat pesanan aktif (`new` atau `confirmed`) yang memuat produk tersebut.
+
