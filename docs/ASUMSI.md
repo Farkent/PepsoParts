@@ -1,26 +1,54 @@
-# Catatan Asumsi Proyek: PEPSO PARTS
+# Asumsi Sistem & Batasan Operasional — PEPSO PARTS
 
-Dokumen ini mencatat asumsi-asumsi teknis dan fungsional yang diambil selama pengerjaan proyek PEPSO PARTS sesuai panduan Bagian 3 Aturan 3.
+Dokumen ini mendokumentasikan asumsi-asumsi bisnis, batasan teknis, dan keputusan arsitektur yang melandasi perancangan sistem **PEPSO PARTS**.
 
 ---
 
-### 1. Lingkungan Pengembangan Windows & XAMPP
-- **PHP Binary:** Lokasi default PHP di sistem pengguna adalah `C:\xampp\php\php.exe` (PHP 8.2.12).
-- **Ekstensi GD & PDO:** Ekstensi `extension=gd` telah diaktifkan di `C:\xampp\php\php.ini` untuk pemrosesan resize foto dan konversi WebP.
-- **Port Layanan Dev:** Backend PHP CLI server berjalan pada port `8000` (`http://127.0.0.1:8000`), dan Vite Frontend berjalan pada port `5173` (`http://127.0.0.1:5173`). Vite bertindak sebagai reverse-proxy untuk `/api` dan `/uploads`.
+## 1. Domain Bisnis & Karakteristik Barang
 
-### 2. Autoloader PHP Mandiri
-- Mengingat tidak semua komputer lokal klien memiliki Composer global yang terpasang di PATH, autoloader PSR-4 mandiri (`backend/src/Autoload.php`) disertakan langsung dalam kode sumber. Autoloader ini memetakan namespace `Pepso\` ke direktori `backend/src/` secara otomatis tanpa ketergantungan composer dump-autoload. File `composer.json` tetap disediakan untuk kompatibilitas standar.
+1. **Spesialisasi Tunggal (Kawasaki Ninja 2-Tak):**
+   - Sistem dikhususkan secara eksklusif untuk ekosistem suku cadang Kawasaki Ninja 150cc 2-Tak (Ninja 150 R, Ninja 150 RR, Ninja 150 SS).
+   - Pengelompokan tipe motor tidak mencakup motor 4-tak (Ninja 250, dll.) guna menjaga fokus keotentikan dan pencocokan komponen unik (seperti Super KIPS, blok silinder 1855/1878, karbu PWK/PWL).
 
-### 3. Normalisasi WhatsApp & Format Rupiah
-- Format nomor telepon pelanggan dan pemilik dinormalisasi secara otomatis menjadi awalan internasional `628xxxxxxxx` pada saat pembuatan tautan `wa.me`.
-- Format mata uang menggunakan Rupiah Indonesia tanpa angka desimal/sen, misal `Rp1.250.000`, menggunakan pemisah titik ribuan khas Indonesia.
+2. **Karakteristik Suku Cadang Bekas / Copotan:**
+   - Mayoritas barang adalah part copotan motor bekas original bawaan pabrik dengan kondisi unik per unit.
+   - Penilaian kondisi menggunakan standardisasi ganda:
+     - **Grade Fisik:** `excellent` (Mulus / Siap Pasang), `good` (Bagus / Ada Baret Halus), `fair` (Normal / Perlu Servis Ringan), `poor` (Minus / Bahan Restorasi).
+     - **Persentase Keutuhan:** Angka persentase (contoh: 90% atau 95%).
+     - **Catatan Minus:** Keterangan transparan (contoh: "ada baret halus pada sirip samping, drat baut aman").
+   - Stok barang bekas umumnya berjumlah terbatas (1 hingga 2 unit per barang).
 
-### 4. Mode AI Default (Mock Provider)
-- Default konfigurasi di `.env` adalah `AI_PROVIDER=mock`. Hal ini menjamin bahwa seluruh fitur AI (Chat, Smart Search, Pengecekan Kecocokan, Rekomendasi Terkait, Pembuat Deskripsi) dapat diuji dan diverifikasi secara 100% deterministik dan bebas biaya tanpa membutuhkan API key eksternal.
-- Ketika API key Gemini disuplai, sistem cukup mengubah `AI_PROVIDER=gemini` tanpa perubahan kode.
+3. **Mekanisme Transaksi & Komunikasi WhatsApp:**
+   - Pembelian di Indonesia untuk segmen suku cadang motor hobi sangat mengandalkan negosiasi dan verifikasi visual langsung melalui WhatsApp.
+   - Sistem menyediakan fitur Checkout Keranjang otomatis yang menghasilkan nomor pesanan resmi (`PO-YYMMDD-XXXX`), namun konfirmasi pembayaran dan pengiriman diselesaikan via tautan WhatsApp terformat (`wa.me`).
 
-### 5. Aturan Ketersediaan & Soft Delete
-- Produk dengan `stock = 0` otomatis berstatus `sold`.
-- Penghapusan produk bersifat soft-delete (`deleted_at`), dan backend menolak penghapusan produk jika masih terdapat pesanan aktif (`new` atau `confirmed`) yang memuat produk tersebut.
+---
 
+## 2. Asumsi Teknis & Arsitektur
+
+1. **Ketiadaan Framework Besar (Native PHP 8.2+):**
+   - Backend dirancang murni menggunakan PHP Native (PSR-4 autoloading manual, PDO, Router mandiri).
+   - Hal ini bertujuan agar aplikasi memiliki *zero dependency vulnerability*, dapat dijalankan pada cPanel hosting murah sekalipun tanpa kompilasi server-side atau Node.js di server produksi.
+
+2. **Format Gambar Terstandarisasi WebP:**
+   - Seluruh foto produk (JPG, PNG, WebP) dikonversi otomatis ke format WebP terkompresi.
+   - Menghasilkan dua ukuran: Large (maks 1600px untuk zoom lightbox) dan Thumbnail (maks 400px untuk kartu katalog).
+   - Metadata EXIF dibuang seluruhnya demi keamanan dan pengurangan ukuran bandwidth seluler.
+
+3. **Toleransi Typo & Kamus Sinonim Komunitas:**
+   - Komunitas motor Ninja 2-Tak sering menggunakan istilah slang/bengkel (misal: "seher" untuk piston, "karbu" untuk karburator, "knalpot" untuk muffler, "blok kips" untuk silinder).
+   - Sistem mengimplementasikan kamus sinonim dwiarah (~50 pasang istilah) dan algoritma pencocokan kemiripan kata (*Levenshtein distance* & *similar_text*) dengan ambang batas toleransi $\ge 70\%$.
+
+4. **Arsitektur Dual AI (Mock & Gemini):**
+   - Mode default aplikasi adalah `AI_PROVIDER=mock`, yang berfungsi secara mandiri, deterministik, dan bebas kuota internet dengan menganalisis basis data lokal.
+   - Mode Google Gemini (`gemini-1.5-flash`) dapat diaktifkan kapan saja melalui konfigurasi `.env`. Jika koneksi API Gemini terganggu, sistem secara otomatis melakukan *graceful fallback* ke `MockProvider` tanpa menyebabkan pesan galat pada pengguna.
+
+---
+
+## 3. Batasan Sistem (Constraints)
+
+1. **Metode Pembayaran Bukan Otomatis Payment Gateway:**
+   - Sistem tidak mengintegrasikan Midtrans/Xendit secara langsung untuk menghindari biaya administrasi per transaksi. Pembayaran dilakukan secara transfer bank manual atau COD bengkel.
+2. **Kerahasiaan Data & Token Publik:**
+   - Pelanggan tidak diwajibkan mendaftar akun/kata sandi (Guest Checkout).
+   - Sebagai gantinya, pelacakan pesanan diproteksi oleh *Cryptographic Public Token* 64 karakter acak yang hanya diketahui oleh pembeli saat pesanan dibuat.
