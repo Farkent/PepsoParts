@@ -62,3 +62,4 @@ interface AiProviderInterface
      */
     public function describeProduct(array $imagePaths, ?string $notes = null, ?string $categoryName = null, ?string $productName = null): string;
 }
+

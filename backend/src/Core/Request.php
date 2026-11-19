@@ -120,6 +120,11 @@ class Request
         return $this->server['HTTP_X_FORWARDED_FOR'] ?? $this->server['REMOTE_ADDR'] ?? '127.0.0.1';
     }
 
+    public function getClientIp(): string
+    {
+        return $this->getIp();
+    }
+
     public function getIpHash(): string
     {
         return hash('sha256', $this->getIp());
