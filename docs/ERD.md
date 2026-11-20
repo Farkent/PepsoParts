@@ -271,3 +271,4 @@ Pelacak frekuensi akses IP untuk proteksi brute-force login.
 - `limit_key` (VARCHAR(100), PK): Kunci identitas per IP dan aksi.
 - `hits` (INT): Jumlah percobaan dalam jendela waktu aktif.
 - `window_start` (DATETIME): Waktu awal pembukaan jendela pembatasan.
+

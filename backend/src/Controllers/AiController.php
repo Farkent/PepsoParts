@@ -17,94 +17,81 @@ class AiController
         $this->ai = new AiService();
     }
 
-    // ─── POST /api/ai/chat ────────────────────────────────────────────────────
+    // ─── POST /api/ai/chat ──────────────────────────────────────────────
 
-    public function chat(Request $req, Response $res): void
+    public function chat(Request $req, array $params = []): void
     {
         $body = $req->getBody();
-        $message = trim($body['message'] ?? '');
+        $message = trim((string)($body['message'] ?? ''));
 
         if ($message === '') {
-            $res->json(['success' => false, 'message' => 'Pesan tidak boleh kosong.'], 400);
+            Response::error('Pesan tidak boleh kosong.', 'VALIDATION_ERROR', 400);
             return;
         }
 
-        $motorSlug = !empty($body['my_motor_slug']) ? trim($body['my_motor_slug']) : null;
+        $motorSlug = !empty($body['my_motor_slug']) ? trim((string)$body['my_motor_slug']) : null;
         $history   = is_array($body['history'] ?? null) ? $body['history'] : [];
         $clientIp  = $req->getClientIp();
 
         $result = $this->ai->chat($message, $motorSlug, $history, $clientIp);
 
-        $res->json([
-            'success' => true,
-            'data'    => $result,
-        ]);
+        Response::json($result);
     }
 
-    // ─── POST /api/ai/search ──────────────────────────────────────────────────
+    // ─── POST /api/ai/search ────────────────────────────────────────────
 
-    public function search(Request $req, Response $res): void
+    public function search(Request $req, array $params = []): void
     {
         $body  = $req->getBody();
-        $query = trim($body['query'] ?? $req->getQuery('q') ?? '');
+        $query = trim((string)($body['query'] ?? $req->getQuery('q') ?? ''));
 
         if ($query === '') {
-            $res->json(['success' => false, 'message' => 'Kata kunci tidak boleh kosong.'], 400);
+            Response::error('Kata kunci tidak boleh kosong.', 'VALIDATION_ERROR', 400);
             return;
         }
 
-        $motorType = !empty($body['motor_type']) ? trim($body['motor_type']) : $req->getQuery('motor_type');
+        $motorType = !empty($body['motor_type']) ? trim((string)$body['motor_type']) : $req->getQuery('motor_type');
         $clientIp  = $req->getClientIp();
 
-        $result = $this->ai->search($query, $motorType, $clientIp);
+        $result = $this->ai->search($query, $motorType ? (string)$motorType : null, $clientIp);
 
-        $res->json([
-            'success' => true,
-            'data'    => $result,
-        ]);
+        Response::json($result);
     }
 
-    // ─── POST /api/ai/compatibility ───────────────────────────────────────────
+    // ─── POST /api/ai/compatibility ─────────────────────────────────────
 
-    public function compatibility(Request $req, Response $res): void
+    public function compatibility(Request $req, array $params = []): void
     {
         $body      = $req->getBody();
         $productId = (int)($body['product_id'] ?? 0);
-        $motorSlug = trim($body['motor_slug'] ?? '');
+        $motorSlug = trim((string)($body['motor_slug'] ?? ''));
 
         if ($productId <= 0 || $motorSlug === '') {
-            $res->json(['success' => false, 'message' => 'Parameter product_id dan motor_slug diperlukan.'], 400);
+            Response::error('Parameter product_id dan motor_slug diperlukan.', 'VALIDATION_ERROR', 400);
             return;
         }
 
         $clientIp = $req->getClientIp();
         $result = $this->ai->compatibility($productId, $motorSlug, $clientIp);
 
-        $res->json([
-            'success' => true,
-            'data'    => $result,
-        ]);
+        Response::json($result);
     }
 
-    // ─── POST /api/admin/ai/describe-product ──────────────────────────────────
+    // ─── POST /api/admin/ai/describe-product ────────────────────────────
 
-    public function describeProduct(Request $req, Response $res): void
+    public function describeProduct(Request $req, array $params = []): void
     {
         $body         = $req->getBody();
-        $notes        = $body['notes'] ?? '';
-        $categoryName = $body['category_name'] ?? '';
-        $productName  = $body['product_name'] ?? '';
+        $notes        = (string)($body['notes'] ?? '');
+        $categoryName = (string)($body['category_name'] ?? '');
+        $productName  = (string)($body['product_name'] ?? '');
         $imagePaths   = is_array($body['image_paths'] ?? null) ? $body['image_paths'] : [];
         $clientIp     = $req->getClientIp();
 
         $desc = $this->ai->describeProduct($imagePaths, $notes, $categoryName, $productName, $clientIp);
 
-        $res->json([
-            'success' => true,
-            'data'    => [
-                'description' => $desc,
-            ],
+        Response::json([
+            'description' => $desc,
         ]);
     }
 }
-

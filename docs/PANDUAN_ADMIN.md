@@ -100,3 +100,4 @@ Untuk keamanan toko:
 2. Masukkan kata sandi saat ini, lalu masukkan kata sandi baru (minimal 8 karakter kombinasi huruf dan angka).
 3. Klik **Perbarui Kata Sandi**.
 4. Selalu klik tombol **Keluar (Logout)** di sudut kiri bawah sidebar jika selesai menggunakan komputer bersama.
+

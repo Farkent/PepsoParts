@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X, RefreshCw } from 'lucide-react';
+import { Search, SlidersHorizontal, X, RefreshCw, Sparkles, Bot, ArrowRight } from 'lucide-react';
 import ProductCard from '../../components/catalog/ProductCard';
 import FilterSheet from '../../components/catalog/FilterSheet';
 import { ProductCardSkeleton } from '../../components/ui/Skeleton';
@@ -131,21 +131,84 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Search Bar */}
+      {/* ─── AI ASSISTANT SHOWCASE BANNER ─── */}
+      <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-ink via-[#1c1d22] to-ink text-white rounded-sm border border-neutral-800 shadow-md relative overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-brand/15 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand/20 border border-brand/40 text-brand text-[11px] font-mono font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 animate-spin text-brand" />
+              <span>Ditenagai AI Google Gemini 1.5 Flash</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-display font-extrabold uppercase text-white tracking-wide">
+              Tanya Mas Wahyu AI — Konsultan Suku Cadang & Mesin Ninja 2-Tak
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+              Bingung kecocokan part, cara rawat Super KIPS, atau setelan karbu? Asisten AI kami dilatih khusus dengan pengetahuan mendalam mekanik Ninja 150 (R, RR, SS) dan data stok live toko.
+            </p>
+
+            {/* Quick Prompt Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-neutral-400 mr-1">Coba tanya:</span>
+              {[
+                'Blok Seher Ninja RR 1855',
+                'Cara rawat Super KIPS biar ga macet',
+                'Rekomendasi oli samping harian',
+                'Perbedaan blok 1855 vs 1878',
+              ].map((promptText, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('pepso:open-chat', { detail: { prompt: promptText } }));
+                  }}
+                  className="px-2.5 py-1 text-[11px] bg-neutral-800/80 hover:bg-brand/20 hover:text-brand border border-neutral-700 hover:border-brand/40 rounded-full transition-all text-neutral-200"
+                >
+                  ⚡ {promptText}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('pepso:open-chat', { detail: { prompt: '' } }));
+              }}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand hover:bg-brand-dark text-white font-display font-bold uppercase tracking-wider text-xs sm:text-sm rounded-sm transition-all shadow-md hover:scale-105"
+            >
+              <Bot className="w-4 h-4" />
+              <span>Mulai Konsultasi AI</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar with AI Semantic Tag */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari nama atau kode produk..."
-          className="w-full pl-10 pr-24 py-3 text-base border border-neutral-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand rounded-sm"
+          placeholder="Cari sparepart (bisa pakai istilah slang seperti 'seher', 'karbu', 'knalpot')..."
+          className="w-full pl-10 pr-44 sm:pr-52 py-3 text-base border border-neutral-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand rounded-sm"
         />
-        {!loading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-text font-medium">
-            {total} produk
-          </div>
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] bg-amber-500/10 text-brand px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border border-amber-500/20">
+            <Sparkles className="w-2.5 h-2.5 text-brand animate-pulse" />
+            AI Search
+          </span>
+          {!loading && (
+            <span className="text-xs text-muted-text font-medium border-l border-neutral-200 pl-2">
+              {total} produk
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Chip Kategori + Tombol Filter */}

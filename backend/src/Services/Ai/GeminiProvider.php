@@ -19,8 +19,8 @@ class GeminiProvider implements AiProviderInterface
 
     public function __construct()
     {
-        $this->apiKey   = Config::get('GEMINI_API_KEY', '');
-        $this->model    = Config::get('GEMINI_MODEL', 'gemini-1.5-flash');
+        $this->apiKey   = (string)(Config::get('GEMINI_API_KEY') ?: Config::get('AI_API_KEY', ''));
+        $this->model    = (string)(Config::get('AI_MODEL_TEXT') ?: Config::get('GEMINI_MODEL', 'gemini-1.5-flash'));
         $this->fallback = new MockProvider();
         $this->db       = Database::getConnection();
     }
@@ -33,14 +33,16 @@ class GeminiProvider implements AiProviderInterface
 
         try {
             $catalogContext = $this->getCatalogContext();
-            $systemInstruction = "Anda adalah Asisten Virtual cerdas untuk 'PEPSO PARTS', toko spesialis suku cadang dan sparepart bekas original Kawasaki Ninja 2-Tak (Ninja R, RR, SS) milik Mas Wahyu Dwi Adrianto di Sentul, Bogor. " .
-                "Jawab dengan ramah, bergaya anak motor/komunitas Ninja 2-Tak, informatif, dan padat. Jangan pernah mengarang produk atau harga yang tidak ada di katalog. " .
-                "Katalog Produk Ready Saat Ini:\n{$catalogContext}\n" .
-                "Format output Anda HARUS berupa JSON murni dengan format:\n" .
+            $systemInstruction = "Anda adalah Asisten Virtual Ahli & Mekanik Konsultan resmi untuk 'PEPSO PARTS', toko dan bengkel spesialis suku cadang bekas original Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS) milik Mas Wahyu Dwi Adrianto yang berlokasi di Sentul, Bogor. " .
+                "Gaya komunikasi Anda: Ramah, santun namun akrab dengan bahasa komunitas pecinta motor Ninja 2-Tak (gunakan sapaan 'Bro' atau 'Mas'), solutif, paham teknis mesin 2-tak (Super KIPS, karburator PWK/PWL, blok silinder 1855/1878, oli samping, knalpot). " .
+                "Anda dapat menjawab SEMUA pertanyaan seputar suku cadang, cara perawatan, masalah teknis motor 2-tak, konsultasi pembelian, informasi toko, maupun pertanyaan umum. " .
+                "Jika pengguna menanyakan ketersediaan produk, rujuklah pada data stok katalog ready berikut ini. Jangan mengarang harga atau stok di luar data katalog:\n" .
+                "Katalog Produk Ready Saat Ini:\n{$catalogContext}\n\n" .
+                "Format output Anda HARUS berupa JSON valid tanpa teks lain di luar kurung kurawal, dengan format:\n" .
                 "{\n" .
-                '  "text": "jawaban penjelasan Anda", ' . "\n" .
+                '  "text": "Jawaban lengkap, informatif, dan ramah Anda", ' . "\n" .
                 '  "suggested_product_ids": [1, 2], ' . "\n" .
-                '  "quick_replies": ["pertanyaan 1", "pertanyaan 2"], ' . "\n" .
+                '  "quick_replies": ["pertanyaan singkat 1", "pertanyaan singkat 2", "pertanyaan singkat 3"], ' . "\n" .
                 '  "fallback_to_whatsapp": false ' . "\n" .
                 "}";
 
@@ -49,41 +51,57 @@ class GeminiProvider implements AiProviderInterface
                 $role = ($h['role'] ?? 'user') === 'user' ? 'user' : 'model';
                 $contents[] = [
                     'role'  => $role,
-                    'parts' => [['text' => $h['text'] ?? '']]
+                    'parts' => [['text' => (string)($h['text'] ?? '')]]
                 ];
             }
-            $userPrompt = $message . ($myMotorSlug ? " (Motor pengguna: {$myMotorSlug})" : "");
+
+            $userPrompt = $message;
+            if ($myMotorSlug) {
+                $userPrompt .= " (Pengguna mengendarai motor: {$myMotorSlug})";
+            }
+
             $contents[] = [
                 'role'  => 'user',
                 'parts' => [['text' => $userPrompt]]
             ];
 
             $response = $this->callGeminiApi($contents, $systemInstruction, jsonMode: true);
-            $parsed = json_decode($response, true);
+            
+            // Clean markdown blocks if present
+            $cleaned = trim($response);
+            if (str_starts_with($cleaned, '```')) {
+                $cleaned = preg_replace('/^```(?:json)?\s*/i', '', $cleaned);
+                $cleaned = preg_replace('/\s*```$/', '', $cleaned);
+                $cleaned = trim($cleaned);
+            }
+
+            $parsed = json_decode($cleaned, true);
 
             if (!is_array($parsed) || empty($parsed['text'])) {
                 return $this->fallback->chat($message, $myMotorSlug, $history);
             }
 
-            // Fetch suggested products
+            // Fetch suggested products by IDs
             $suggestedProducts = [];
             if (!empty($parsed['suggested_product_ids']) && is_array($parsed['suggested_product_ids'])) {
-                $ids = array_map('intval', $parsed['suggested_product_ids']);
-                $placeholders = implode(',', array_fill(0, count($ids), '?'));
-                $stmt = $this->db->prepare(
-                    "SELECT p.id, p.code, p.name, p.slug, p.price, p.stock,
-                            (SELECT thumb_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
-                     FROM products p
-                     WHERE p.id IN ({$placeholders}) AND p.deleted_at IS NULL"
-                );
-                $stmt->execute($ids);
-                $suggestedProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $ids = array_map('intval', array_filter($parsed['suggested_product_ids'], 'is_numeric'));
+                if (!empty($ids)) {
+                    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                    $stmt = $this->db->prepare(
+                        "SELECT p.id, p.code, p.name, p.slug, p.price, p.stock,
+                                (SELECT thumb_path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+                         FROM products p
+                         WHERE p.id IN ({$placeholders}) AND p.deleted_at IS NULL"
+                    );
+                    $stmt->execute($ids);
+                    $suggestedProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                }
             }
 
             return [
                 'text'                 => $parsed['text'],
                 'suggested_products'   => $suggestedProducts,
-                'quick_replies'        => $parsed['quick_replies'] ?? ['Blok Seher', 'Knalpot', 'Tanya WA Mas Wahyu'],
+                'quick_replies'        => $parsed['quick_replies'] ?? ['Konsultasi via WA Mas Wahyu', 'Cek Blok Seher', 'Cek Knalpot'],
                 'fallback_to_whatsapp' => (bool)($parsed['fallback_to_whatsapp'] ?? false),
             ];
         } catch (\Throwable $e) {
@@ -94,13 +112,11 @@ class GeminiProvider implements AiProviderInterface
 
     public function search(string $query, ?string $motorType = null): array
     {
-        // For search, MockProvider leverages SQL fulltext + synonyms which is deterministic and accurate
         return $this->fallback->search($query, $motorType);
     }
 
     public function compatibility(int $productId, string $motorSlug): array
     {
-        // Compatibility check is strictly deterministic from database relations
         return $this->fallback->compatibility($productId, $motorSlug);
     }
 
@@ -111,13 +127,16 @@ class GeminiProvider implements AiProviderInterface
         }
 
         try {
-            $cat = $categoryName ?: 'Sparepart Ninja 2-Tak';
+            $cat = $categoryName ?: 'Sparepart Kawasaki Ninja 2-Tak';
             $title = $productName ?: ($cat . ' Original');
-            $prompt = "Buatkan deskripsi produk penjualan yang profesional, meyakinkan, dan ramah untuk e-commerce suku cadang motor bekas 'PEPSO PARTS'.\n" .
+            $prompt = "Buatkan deskripsi produk penjualan suku cadang motor bekas original untuk toko online 'PEPSO PARTS' (Milik Mas Wahyu Dwi Adrianto di Sentul).\n\n" .
                       "Nama Produk: {$title}\n" .
                       "Kategori: {$cat}\n" .
-                      "Catatan Kondisi dari Mekanik: " . ($notes ?: 'Original copotan normal mulus') . "\n\n" .
-                      "Tuliskan dalam Bahasa Indonesia dengan format rapi (bullet point kelebihan, kondisi fisik, fungsi, dan jaminan PNP). Hindari kata-kata lebay.";
+                      "Catatan Kondisi Fisik: " . ($notes ?: 'Original copotan normal mulus, drat dan sirip aman') . "\n\n" .
+                      "Instruksi Penulisan:\n" .
+                      "1. Tulis dalam Bahasa Indonesia yang profesional, jujur, meyakinkan para penghobi motor Ninja 2-Tak.\n" .
+                      "2. Susun dengan format rapi (Pembuka, Poin Keaslian OEM, Kondisi Fisik & Drat, Jaminan PNP, dan Himbauan Checkout).\n" .
+                      "3. Berikan penekanan bahwa barang copotan stoknya sangat terbatas.";
 
             $contents = [
                 [
@@ -134,8 +153,6 @@ class GeminiProvider implements AiProviderInterface
         }
     }
 
-    // ─── Gemini HTTP Client ───────────────────────────────────────────────────
-
     private function callGeminiApi(array $contents, ?string $systemInstruction = null, bool $jsonMode = false): string
     {
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
@@ -143,8 +160,8 @@ class GeminiProvider implements AiProviderInterface
         $payload = [
             'contents' => $contents,
             'generationConfig' => [
-                'temperature'     => 0.4,
-                'maxOutputTokens' => 800,
+                'temperature'     => 0.5,
+                'maxOutputTokens' => 1000,
             ]
         ];
 
@@ -164,7 +181,7 @@ class GeminiProvider implements AiProviderInterface
             CURLOPT_POSTFIELDS     => json_encode($payload),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_TIMEOUT        => 15,
         ]);
 
         $result   = curl_exec($ch);
@@ -210,4 +227,3 @@ class GeminiProvider implements AiProviderInterface
         return $out;
     }
 }
-

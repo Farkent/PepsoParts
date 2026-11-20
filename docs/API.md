@@ -183,3 +183,4 @@ Seluruh rute ini mewajibkan sesi aktif admin dan header `X-CSRF-Token` pada aksi
 - **`GET /api/admin/categories`**, **`POST`**, **`PUT`**, **`DELETE`**
 - **`GET /api/admin/motor-types`**, **`POST`**, **`PUT`**, **`DELETE`**
 - **`GET /api/admin/settings`**, **`PUT /api/admin/settings`**
+

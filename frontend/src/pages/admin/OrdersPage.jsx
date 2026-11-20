@@ -34,8 +34,11 @@ export default function OrdersPage() {
       if (dateTo) params.date_to = dateTo;
 
       const res = await adminGetOrders(params);
-      if (res.data && res.data.success) {
-        setOrders(res.data.data);
+      if (res?.success) {
+        setOrders(res.data || []);
+        setTotal(res.meta?.total || 0);
+      } else if (res?.data && res.data.success) {
+        setOrders(res.data.data || []);
         setTotal(res.data.meta?.total || 0);
       }
     } catch (err) {

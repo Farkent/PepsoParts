@@ -84,3 +84,4 @@ Dokumen ini berisi kumpulan skenario uji khusus untuk mengevaluasi keakuratan, k
   - Tabel `ai_usage_logs` mencatat status `fallback_mock`.
   - Pengguna tetap menerima balasan obrolan tanpa ada gangguan layanan.
 - **Status:** ✅ Lulus (Arsitektur Adapter Terverifikasi)
+

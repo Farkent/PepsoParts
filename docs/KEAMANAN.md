@@ -163,3 +163,4 @@ SUMMARY: 21 PASSED, 0 FAILED (100%)
 3. **Sertifikat SSL/TLS:**
    - Wajib menggunakan HTTPS (Port 443) dengan TLS 1.3 / 1.2 untuk mengamankan transmisi sesi dan data pelanggan.
    - Setel `APP_ENV=production` dan `APP_URL=https://pepsoparts.com` pada file `.env`.
+

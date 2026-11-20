@@ -39,7 +39,10 @@ export default function ReportsPage() {
     setStockLoading(true);
     try {
       const res = await adminGetStockReport('json');
-      if (res.data && res.data.success) {
+      if (res?.success) {
+        setStockData(res.data);
+        setStockMeta(res.meta || {});
+      } else if (res?.data && res.data.success) {
         setStockData(res.data.data);
         setStockMeta(res.data.meta || {});
       }
@@ -55,7 +58,9 @@ export default function ReportsPage() {
     setSalesLoading(true);
     try {
       const res = await adminGetOrderReport({ date_from: dateFrom, date_to: dateTo });
-      if (res.data && res.data.success) {
+      if (res?.success) {
+        setSalesData(res.data);
+      } else if (res?.data && res.data.success) {
         setSalesData(res.data.data);
       }
     } catch (err) {

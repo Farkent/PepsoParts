@@ -57,18 +57,19 @@ export default function ProductFormPage() {
         notes: formData.condition_note || formData.compat_notes || '',
       });
 
-      if (res.data && res.data.success && res.data.data?.description) {
+      const desc = res?.data?.description || res?.description;
+      if (desc) {
         setFormData((prev) => ({
           ...prev,
-          description: res.data.data.description,
+          description: desc,
         }));
         success('Draf deskripsi AI berhasil dibuat!');
       } else {
-        toastError('Gagal membuat deskripsi AI.');
+        toastError(res?.error?.message || 'Gagal membuat deskripsi AI.');
       }
     } catch (err) {
       console.error('AI describe error:', err);
-      toastError('Terjadi kesalahan saat memproses deskripsi AI.');
+      toastError(err.message || 'Terjadi kesalahan saat memproses deskripsi AI.');
     } finally {
       setGeneratingAiDesc(false);
     }
@@ -459,21 +460,24 @@ export default function ProductFormPage() {
 
         {/* Card 5: Deskripsi */}
         <div className="bg-white border border-neutral-200 p-5 rounded-sm shadow-subtle space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-            <h2 className="font-display font-bold uppercase text-base text-ink">
-              5. Deskripsi Lengkap
-            </h2>
-            <Button
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-neutral-100">
+            <div>
+              <h2 className="font-display font-bold uppercase text-base text-ink flex items-center gap-2">
+                5. Deskripsi Lengkap
+                <span className="text-[10px] bg-brand/10 text-brand px-2 py-0.5 rounded-full font-mono uppercase font-semibold">
+                  AI Powered
+                </span>
+              </h2>
+            </div>
+            <button
               type="button"
-              variant="outline"
-              size="xs"
-              icon={Sparkles}
-              loading={generatingAiDesc}
+              disabled={generatingAiDesc}
               onClick={handleGenerateAiDescription}
-              className="text-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-brand text-white text-xs font-bold uppercase tracking-wider rounded-sm shadow-sm hover:from-orange-600 hover:to-brand-dark transition-all disabled:opacity-50"
             >
-              Buat Draf dengan AI
-            </Button>
+              <Sparkles className={`w-3.5 h-3.5 ${generatingAiDesc ? 'animate-spin' : ''}`} />
+              {generatingAiDesc ? 'Menyusun Draf...' : '⚡ Buat Draf dengan AI'}
+            </button>
           </div>
 
           <Textarea

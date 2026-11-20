@@ -187,3 +187,4 @@ php backend/bin/create-admin.php "Wahyu Dwi Adrianto" admin@pepsoparts.com "Admi
 Setelah itu, buka peramban dan login melalui:
 `https://pepsoparts.com/admin/login`
 Ganti kata sandi secara berkala di menu **Admin $\rightarrow$ Pengaturan Toko $\rightarrow$ Ganti Kata Sandi**.
+

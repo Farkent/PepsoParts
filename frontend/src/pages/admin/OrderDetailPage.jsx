@@ -38,9 +38,10 @@ export default function OrderDetailPage() {
     setLoading(true);
     try {
       const res = await adminGetOrder(id);
-      if (res.data && res.data.success) {
-        setOrder(res.data.data);
-        setNote(res.data.data.admin_note || '');
+      if (res?.success || res?.data?.success) {
+        const orderData = res?.data?.id ? res.data : (res?.data?.data || res?.data);
+        setOrder(orderData);
+        setNote(orderData?.admin_note || '');
       } else {
         toastError('Pesanan tidak ditemukan.');
         navigate('/admin/pesanan');
@@ -68,11 +69,11 @@ export default function OrderDetailPage() {
     setUpdatingStatus(true);
     try {
       const res = await adminPatchOrderStatus(id, newStatus);
-      if (res.data && res.data.success) {
+      if (res?.success || res?.data?.success) {
         success('Status pesanan berhasil diperbarui.');
         fetchOrder();
       } else {
-        toastError(res.data?.message || 'Gagal mengubah status.');
+        toastError(res?.message || res?.data?.message || 'Gagal mengubah status.');
       }
     } catch (err) {
       console.error('Update status error:', err);
@@ -86,7 +87,7 @@ export default function OrderDetailPage() {
     setSavingNote(true);
     try {
       const res = await adminPatchOrderNote(id, note);
-      if (res.data && res.data.success) {
+      if (res?.success || res?.data?.success) {
         success('Catatan admin berhasil disimpan.');
       } else {
         toastError('Gagal menyimpan catatan.');

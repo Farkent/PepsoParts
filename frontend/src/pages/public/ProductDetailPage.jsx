@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Copy, Check, Share2, MessageCircle, ShoppingCart,
-  ChevronLeft, ChevronRight, AlertTriangle, Bike, ZoomIn
+  ChevronLeft, ChevronRight, AlertTriangle, Bike, ZoomIn,
+  Sparkles, Bot
 } from 'lucide-react';
 import { getProduct, getRelatedProducts } from '../../api/endpoints';
 import { useCart } from '../../context/CartContext';
@@ -255,36 +256,54 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Peringatan Kecocokan Motor Saya */}
+          {/* Peringatan Kecocokan Motor Saya (Ditenagai AI) */}
           {selectedMotor && compatStatus !== 'unknown' ? (
-            <div className={`p-3 border rounded-sm flex gap-3 items-start text-sm ${
+            <div className={`p-3.5 border rounded-sm flex gap-3 items-start text-sm ${
               compatStatus === 'compatible'
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
                 : 'bg-amber-50 border-amber-400 text-amber-900'
             }`}>
               <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${compatStatus === 'compatible' ? 'text-emerald-600' : 'text-amber-600'}`} />
-              <div>
-                <div className="font-bold flex items-center gap-1.5">
-                  <Bike className="w-4 h-4" />
-                  Cek Kecocokan: {selectedMotor.name}
-                </div>
-                <p className="mt-0.5">{compatMessage}</p>
-                {compatStatus === 'incompatible' && (
-                  <div className="flex gap-2 mt-2">
-                    <Link to="/" className="text-xs font-bold underline">Lihat yang cocok</Link>
-                    <a href={buildWaUrl()} target="_blank" rel="noopener noreferrer" className="text-xs font-bold underline">
-                      Tanya via WhatsApp
-                    </a>
+              <div className="flex-1">
+                <div className="font-bold flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Bike className="w-4 h-4 text-brand" />
+                    <span>Cek Kecocokan: {selectedMotor.name}</span>
                   </div>
-                )}
+                  <span className="text-[10px] bg-white/80 border border-neutral-300 px-1.5 py-0.5 rounded font-mono font-bold uppercase text-brand flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-brand" /> AI Verified
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed">{compatMessage}</p>
+                <div className="flex flex-wrap gap-2 mt-2 pt-1 border-t border-black/5">
+                  {compatStatus === 'incompatible' && (
+                    <Link to="/" className="text-xs font-bold underline text-ink hover:text-brand">Lihat part lain yang cocok</Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('pepso:open-chat', {
+                        detail: { prompt: `Apakah ${product.name} (${product.code}) cocok dipasang di ${selectedMotor.name}? Apa ada penyesuaian braket atau dudukan?` }
+                      }));
+                    }}
+                    className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1"
+                  >
+                    <Bot className="w-3.5 h-3.5" />
+                    Konsultasi teknis dengan Mas Wahyu AI
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="p-3 border border-neutral-200 bg-neutral-50 rounded-sm text-xs space-y-2">
+            <div className="p-3.5 border border-neutral-200 bg-neutral-50 rounded-sm text-xs space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-ink flex items-center gap-1.5">
                   <Bike className="w-3.5 h-3.5 text-brand" />
                   Cek Kecocokan dengan Motor Anda:
+                </span>
+                <span className="text-[10px] bg-brand/10 text-brand px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-brand" />
+                  AI Compatibility
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -293,15 +312,29 @@ export default function ProductDetailPage() {
                     key={m.id}
                     type="button"
                     onClick={() => selectMotor(m)}
-                    className="px-2.5 py-1 bg-white border border-neutral-300 hover:border-brand text-ink text-[11px] rounded-sm transition-colors font-medium"
+                    className="px-2.5 py-1 bg-white border border-neutral-300 hover:border-brand hover:text-brand text-ink text-[11px] rounded-sm transition-colors font-medium shadow-2xs"
                   >
                     {m.name}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-text">
-                Pilih motormu untuk langsung memverifikasi apakah part ini Plug and Play (PNP).
-              </p>
+              <div className="flex items-center justify-between pt-1 border-t border-neutral-200/60">
+                <p className="text-[10px] text-muted-text">
+                  Pilih motormu untuk langsung verifikasi apakah part ini Plug & Play (PNP).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('pepso:open-chat', {
+                      detail: { prompt: `Tanya detail dan kondisi fisik untuk ${product.name} (${product.code}) dong Mas Wahyu` }
+                    }));
+                  }}
+                  className="text-[11px] font-bold text-brand hover:underline inline-flex items-center gap-1 ml-2 flex-shrink-0"
+                >
+                  <Bot className="w-3 h-3" />
+                  Tanya AI
+                </button>
+              </div>
             </div>
           )}
 

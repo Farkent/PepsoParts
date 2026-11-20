@@ -16,9 +16,10 @@ class AiService
     public function __construct()
     {
         $this->db = Database::getConnection();
-        $providerType = Config::get('AI_PROVIDER', 'mock');
+        $providerType = strtolower((string)Config::get('AI_PROVIDER', 'mock'));
+        $apiKey = (string)(Config::get('GEMINI_API_KEY') ?: Config::get('AI_API_KEY', ''));
 
-        if ($providerType === 'gemini' && !empty(Config::get('GEMINI_API_KEY'))) {
+        if ($providerType === 'gemini' && !empty($apiKey)) {
             $this->provider = new GeminiProvider();
         } else {
             $this->provider = new MockProvider();
