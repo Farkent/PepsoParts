@@ -36,9 +36,13 @@ class SettingsRepository
         $stmt = $this->db->prepare(
             'INSERT INTO settings (setting_key, setting_value, updated_at)
              VALUES (:key, :value, NOW())
-             ON DUPLICATE KEY UPDATE setting_value = :value, updated_at = NOW()'
+             ON DUPLICATE KEY UPDATE setting_value = :update_value, updated_at = NOW()'
         );
-        $stmt->execute(['key' => $key, 'value' => $value]);
+        $stmt->execute([
+            'key' => $key,
+            'value' => $value,
+            'update_value' => $value,
+        ]);
     }
 
     public function setMany(array $pairs): void

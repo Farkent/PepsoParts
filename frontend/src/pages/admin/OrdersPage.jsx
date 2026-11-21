@@ -8,6 +8,17 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Skeleton from '../../components/ui/Skeleton';
 
+// Pastikan nilai selalu berupa array, supaya .map() tidak membuat halaman crash
+const toArray = (v) => {
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === 'object') {
+    for (const k of ['items', 'data', 'orders', 'rows', 'list']) {
+      if (Array.isArray(v[k])) return v[k];
+    }
+  }
+  return [];
+};
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
@@ -34,12 +45,17 @@ export default function OrdersPage() {
       if (dateTo) params.date_to = dateTo;
 
       const res = await adminGetOrders(params);
-      if (res?.success) {
-        setOrders(res.data || []);
-        setTotal(res.meta?.total || 0);
-      } else if (res?.data && res.data.success) {
-        setOrders(res.data.data || []);
-        setTotal(res.data.meta?.total || 0);
+      const payload = res?.success ? res : res?.data?.success ? res.data : null;
+      if (payload) {
+        const list = toArray(payload.data);
+        setOrders(list);
+        setTotal(
+          Number(payload.meta?.total ?? payload.data?.total ?? list.length) || 0
+        );
+      } else {
+        console.warn('Respons daftar pesanan tidak dikenali:', res);
+        setOrders([]);
+        setTotal(0);
       }
     } catch (err) {
       console.error('Error fetching admin orders:', err);
@@ -178,15 +194,15 @@ export default function OrdersPage() {
                     </td>
                   </tr>
                 ))
-              ) : orders.length === 0 ? (
+              ) : toArray(orders).length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-muted-text">
                     Tidak ada pesanan yang sesuai dengan filter.
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-neutral-50 transition-colors">
+                toArray(orders).map((order, idx) => (
+                  <tr key={order.id || idx} className="hover:bg-neutral-50 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold text-ink">
                       {order.order_code}
                     </td>
@@ -251,4 +267,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-

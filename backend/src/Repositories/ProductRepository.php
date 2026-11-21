@@ -30,6 +30,7 @@ class ProductRepository
             p.condition_grade, p.condition_percent, p.condition_note,
             p.price, p.stock, p.status, p.compat_notes,
             p.sold_at, p.created_at, p.updated_at,
+            (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id = p.id) AS variant_count,
             c.name AS category_name, c.slug AS category_slug, c.code AS category_code,
             pi.path AS primary_image_path, pi.thumb_path AS primary_thumb_path,
             GROUP_CONCAT(DISTINCT mt.name ORDER BY pmt.is_primary DESC SEPARATOR ', ') AS motor_types_text,
@@ -148,6 +149,7 @@ class ProductRepository
             p.id, p.code, p.slug, p.name, p.category_id,
             p.condition_grade, p.condition_percent, p.condition_note,
             p.price, p.stock, p.status, p.compat_notes, p.created_at,
+            (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id = p.id) AS variant_count,
             c.name AS category_name, c.slug AS category_slug, c.code AS category_code,
             pi.path AS primary_image_path, pi.thumb_path AS primary_thumb_path,
             GROUP_CONCAT(DISTINCT mt.name ORDER BY pmt.is_primary DESC SEPARATOR ', ') AS motor_types_text,
@@ -213,6 +215,9 @@ class ProductRepository
         // Ambil semua tipe motor yang cocok
         $product['motor_types'] = $this->getMotorTypes((int)$row['id']);
 
+        // Ambil varian (jika ada)
+        $product['variants'] = $this->getVariants((int)$row['id']);
+
         return $product;
     }
 
@@ -231,6 +236,7 @@ class ProductRepository
         if ($withDetails) {
             $product['images'] = $this->getImages($id);
             $product['motor_types'] = $this->getMotorTypes($id);
+            $product['variants'] = $this->getVariants($id);
         }
 
         return $product;
@@ -243,6 +249,121 @@ class ProductRepository
         );
         $stmt->execute(['id' => $productId]);
         return $stmt->fetchAll();
+    }
+
+    public function getVariants(int $productId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id, product_id, name, price, stock, image_id, sort_order
+             FROM product_variants WHERE product_id = :id
+             ORDER BY sort_order ASC, id ASC'
+        );
+        $stmt->execute(['id' => $productId]);
+        return array_map(static fn(array $v) => [
+            'id'         => (int)$v['id'],
+            'product_id' => (int)$v['product_id'],
+            'name'       => $v['name'],
+            'price'      => (int)$v['price'],
+            'stock'      => (int)$v['stock'],
+            'image_id'   => $v['image_id'] !== null ? (int)$v['image_id'] : null,
+            'sort_order' => (int)$v['sort_order'],
+        ], $stmt->fetchAll());
+    }
+
+    /**
+     * Sinkronkan daftar varian produk (tambah / ubah / hapus).
+     * Item dengan 'id' = update, tanpa 'id' = tambah, yang tidak ada di daftar = dihapus.
+     * Dipanggil di dalam transaksi oleh controller.
+     */
+    public function syncVariants(int $productId, array $variants): void
+    {
+        $stmt = $this->db->prepare('SELECT id FROM product_variants WHERE product_id = :id');
+        $stmt->execute(['id' => $productId]);
+        $existingIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        $keepIds = [];
+
+        // Foto varian hanya boleh dipilih dari foto produk ini
+        $imgStmt = $this->db->prepare('SELECT id FROM product_images WHERE product_id = :id');
+        $imgStmt->execute(['id' => $productId]);
+        $validImageIds = array_map('intval', $imgStmt->fetchAll(PDO::FETCH_COLUMN));
+
+        foreach (array_values($variants) as $i => $v) {
+            $vid = (int)($v['id'] ?? 0);
+            $data = [
+                'name'  => trim((string)$v['name']),
+                'price' => (int)$v['price'],
+                'stock' => max(0, (int)$v['stock']),
+                'image' => in_array((int)($v['image_id'] ?? 0), $validImageIds, true) ? (int)$v['image_id'] : null,
+                'sort'  => $i,
+            ];
+            if ($vid > 0 && in_array($vid, $existingIds, true)) {
+                $this->db->prepare(
+                    'UPDATE product_variants SET name = :name, price = :price, stock = :stock,
+                     image_id = :image, sort_order = :sort WHERE id = :id AND product_id = :pid'
+                )->execute($data + ['id' => $vid, 'pid' => $productId]);
+                $keepIds[] = $vid;
+            } else {
+                $this->db->prepare(
+                    'INSERT INTO product_variants (product_id, name, price, stock, image_id, sort_order)
+                     VALUES (:pid, :name, :price, :stock, :image, :sort)'
+                )->execute($data + ['pid' => $productId]);
+                $keepIds[] = (int)$this->db->lastInsertId();
+            }
+        }
+
+        foreach (array_diff($existingIds, $keepIds) as $oldId) {
+            $this->db->prepare('DELETE FROM product_variants WHERE id = :id')->execute(['id' => $oldId]);
+        }
+
+        $this->recalcFromVariants($productId);
+    }
+
+    /**
+     * Hitung ulang harga (termurah), stok (total) dan status produk dari varian-variannya.
+     * Tidak melakukan apa-apa bila produk tidak punya varian.
+     */
+    public function recalcFromVariants(int $productId): void
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) AS n, COALESCE(SUM(stock), 0) AS total_stock,
+                    MIN(price) AS min_price,
+                    MIN(CASE WHEN stock > 0 THEN price END) AS min_price_in_stock
+             FROM product_variants WHERE product_id = :id'
+        );
+        $stmt->execute(['id' => $productId]);
+        $agg = $stmt->fetch();
+        if (!$agg || (int)$agg['n'] === 0) {
+            return;
+        }
+
+        $totalStock = (int)$agg['total_stock'];
+        $price = (int)($agg['min_price_in_stock'] ?? $agg['min_price']);
+
+        $stmt = $this->db->prepare('SELECT status FROM products WHERE id = :id');
+        $stmt->execute(['id' => $productId]);
+        $status = (string)$stmt->fetchColumn();
+
+        if ($totalStock <= 0) {
+            $newStatus = 'sold';
+        } else {
+            $newStatus = $status === 'sold' ? 'available' : $status;
+        }
+
+        $this->db->prepare(
+            "UPDATE products SET price = :price, stock = :stock, status = :status,
+             sold_at = CASE WHEN :status2 = 'sold' THEN COALESCE(sold_at, NOW()) ELSE NULL END,
+             updated_at = NOW() WHERE id = :id"
+        )->execute([
+            'price' => $price, 'stock' => $totalStock,
+            'status' => $newStatus, 'status2' => $newStatus, 'id' => $productId,
+        ]);
+    }
+
+    public function hasVariants(int $productId): bool
+    {
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM product_variants WHERE product_id = :id');
+        $stmt->execute(['id' => $productId]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     public function getMotorTypes(int $productId): array
@@ -435,9 +556,13 @@ class ProductRepository
         }
 
         match ($action) {
-            'sell' => $this->db->prepare(
-                "UPDATE products SET status = 'sold', stock = 0, sold_at = NOW(), updated_at = NOW() WHERE id = :id"
-            )->execute(['id' => $id]),
+            'sell' => (function () use ($id) {
+                $this->db->prepare("UPDATE product_variants SET stock = 0 WHERE product_id = :id")
+                    ->execute(['id' => $id]);
+                $this->db->prepare(
+                    "UPDATE products SET status = 'sold', stock = 0, sold_at = NOW(), updated_at = NOW() WHERE id = :id"
+                )->execute(['id' => $id]);
+            })(),
             'unavailable' => $this->db->prepare(
                 "UPDATE products SET status = 'unavailable', updated_at = NOW() WHERE id = :id"
             )->execute(['id' => $id]),
@@ -532,6 +657,7 @@ class ProductRepository
             'price'            => (int)$row['price'],
             'stock'            => (int)$row['stock'],
             'status'           => $row['status'],
+            'variant_count'    => (int)($row['variant_count'] ?? 0),
             'compat_notes'     => $row['compat_notes'] ?? null,
             'sold_at'          => $row['sold_at'] ?? null,
             'created_at'       => $row['created_at'] ?? null,

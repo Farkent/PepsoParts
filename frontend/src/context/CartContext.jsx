@@ -3,6 +3,9 @@ import { useToast } from './ToastContext';
 
 const CartContext = createContext(null);
 
+// Kunci unik satu baris keranjang: produk yang sama dengan varian berbeda = baris berbeda
+export const itemKey = (item) => `${item.id}:${item.variant_id || 0}`;
+
 export function CartProvider({ children }) {
   const { warning, info } = useToast();
   const [items, setItems] = useState(() => {
@@ -18,24 +21,37 @@ export function CartProvider({ children }) {
     localStorage.setItem('pepso_cart', JSON.stringify(items));
   }, [items]);
 
-  const addItem = (product, quantity = 1) => {
-    if (product.status !== 'available' || (product.stock ?? 0) <= 0) {
+  const addItem = (product, quantity = 1, variant = null) => {
+    // Produk bervarian wajib memilih varian
+    if (product.variants?.length > 0 && !variant) {
+      warning('Silakan pilih varian terlebih dahulu.');
+      return false;
+    }
+
+    const unitStock = variant ? variant.stock : product.stock;
+    const unitPrice = variant ? variant.price : product.price;
+    const variantId = variant ? variant.id : null;
+
+    if (product.status !== 'available' || (unitStock ?? 0) <= 0) {
       warning('Produk ini sudah terjual atau tidak tersedia.');
       return false;
     }
 
+    const label = variant ? `${product.name} (${variant.name})` : product.name;
+
     setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.id === product.id);
+      const key = `${product.id}:${variantId || 0}`;
+      const existingIndex = prev.findIndex((item) => itemKey(item) === key);
       if (existingIndex > -1) {
         const currentQty = prev[existingIndex].quantity;
-        const newQty = Math.min(currentQty + quantity, product.stock);
+        const newQty = Math.min(currentQty + quantity, unitStock);
         if (newQty === currentQty) {
-          warning(`Stok maksimal untuk produk ini adalah ${product.stock}.`);
+          warning(`Stok maksimal untuk produk ini adalah ${unitStock}.`);
           return prev;
         }
         const updated = [...prev];
-        updated[existingIndex] = { ...updated[existingIndex], quantity: newQty };
-        info(`Jumlah ${product.name} diperbarui menjadi ${newQty}.`);
+        updated[existingIndex] = { ...updated[existingIndex], quantity: newQty, stock: unitStock, price: unitPrice };
+        info(`Jumlah ${label} diperbarui menjadi ${newQty}.`);
         return updated;
       }
 
@@ -44,19 +60,24 @@ export function CartProvider({ children }) {
         return prev;
       }
 
-      const initialQty = Math.min(quantity, product.stock);
-      info(`${product.name} dimasukkan ke keranjang.`);
+      const initialQty = Math.min(quantity, unitStock);
+      info(`${label} dimasukkan ke keranjang.`);
       return [
         ...prev,
         {
           id: product.id,
+          variant_id: variantId,
+          variant_name: variant ? variant.name : null,
           code: product.code,
           slug: product.slug,
           name: product.name,
-          price: product.price,
-          stock: product.stock,
+          price: unitPrice,
+          stock: unitStock,
           status: product.status,
-          primary_image: product.primary_image || (product.images && product.images[0]?.thumb_path) || null,
+          primary_image: (() => {
+            const vi = variant?.image_id ? (product.images || []).find((im) => Number(im.id) === Number(variant.image_id)) : null;
+            return vi ? (vi.thumb_path || vi.path) : (product.primary_image || (product.images && product.images[0]?.thumb_path) || null);
+          })(),
           quantity: initialQty,
         },
       ];
@@ -65,11 +86,11 @@ export function CartProvider({ children }) {
     return true;
   };
 
-  const updateQty = (productId, newQty) => {
+  const updateQty = (key, newQty) => {
     setItems((prev) =>
       prev
         .map((item) => {
-          if (item.id === productId) {
+          if (itemKey(item) === key) {
             const max = item.stock || 1;
             const validQty = Math.max(1, Math.min(newQty, max));
             return { ...item, quantity: validQty };
@@ -80,8 +101,8 @@ export function CartProvider({ children }) {
     );
   };
 
-  const removeItem = (productId) => {
-    setItems((prev) => prev.filter((item) => item.id !== productId));
+  const removeItem = (key) => {
+    setItems((prev) => prev.filter((item) => itemKey(item) !== key));
   };
 
   const clearCart = () => {

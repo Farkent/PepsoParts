@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Share2, MessageCircle } from 'lucide-react';
 import Badge, { StatusBadge, GradeBadge } from '../ui/Badge';
 import Button from '../ui/Button';
@@ -8,11 +8,18 @@ import { useCart } from '../../context/CartContext';
 
 export default function ProductCard({ product, myMotorSlug }) {
   const { addItem } = useCart();
+  const navigate = useNavigate();
+  const hasVariants = (product.variant_count || 0) > 0;
   const isAvailable = product.status === 'available' && product.stock > 0;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Produk bervarian: arahkan ke halaman detail agar pelanggan memilih varian dulu
+    if (hasVariants) {
+      navigate(`/produk/${product.slug}`);
+      return;
+    }
     addItem(product);
   };
 
@@ -33,13 +40,13 @@ export default function ProductCard({ product, myMotorSlug }) {
       className={`group relative flex flex-col bg-white border hover:border-brand transition-colors duration-150 overflow-hidden rounded-sm ${motorCompatClass || 'border-neutral-200'}`}
     >
       {/* Gambar Produk */}
-      <div className={`relative aspect-[4/3] overflow-hidden bg-muted-bg ${!isAvailable ? 'grayscale opacity-70' : ''}`}>
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted-bg">
         {primaryImage ? (
           <img
             src={primaryImage}
             alt={product.name}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+            className={`w-full h-full object-cover transition-transform duration-200 group-hover:scale-105 ${!isAvailable ? 'brightness-90' : ''}`}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-text p-4">
@@ -48,10 +55,21 @@ export default function ProductCard({ product, myMotorSlug }) {
           </div>
         )}
 
-        {/* Badge Ketersediaan - Kiri Atas */}
-        <div className="absolute top-2 left-2">
-          <StatusBadge status={product.status} stock={product.stock} />
-        </div>
+        {/* Tanda Habis / Terjual: lingkaran gelap di tengah foto */}
+        {!isAvailable && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-black/70 flex items-center justify-center px-2 text-center text-white font-display font-bold text-sm sm:text-base leading-tight">
+              {product.status === 'unavailable' && product.stock > 0 ? 'Tidak Tersedia' : 'Habis'}
+            </div>
+          </div>
+        )}
+
+        {/* Badge Ketersediaan - Kiri Atas (disembunyikan bila sudah ada tanda Habis) */}
+        {isAvailable && (
+          <div className="absolute top-2 left-2">
+            <StatusBadge status={product.status} stock={product.stock} />
+          </div>
+        )}
 
         {/* Badge Kategori - Kanan Atas */}
         <div className="absolute top-2 right-2">
@@ -84,6 +102,9 @@ export default function ProductCard({ product, myMotorSlug }) {
         {/* Harga & Aksi */}
         <div className="mt-auto pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
           <div className="font-display font-extrabold text-base text-ink">
+            {(product.variant_count || 0) > 1 && (
+              <span className="block text-[10px] font-bold text-muted-text uppercase leading-none">Mulai dari</span>
+            )}
             {formatRupiah(product.price)}
           </div>
 
@@ -94,7 +115,7 @@ export default function ProductCard({ product, myMotorSlug }) {
               aria-label="Tambah ke keranjang"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              <span>Pesan</span>
+              <span>{(product.variant_count || 0) > 1 ? 'Pilih' : 'Pesan'}</span>
             </button>
           ) : (
             <span className="text-xs text-muted-text font-display font-bold uppercase">

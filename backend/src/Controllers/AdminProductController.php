@@ -27,6 +27,42 @@ class AdminProductController
         $this->imageService = new ImageService();
     }
 
+    /**
+     * Validasi daftar varian dari body request.
+     * Mengembalikan null bila 'variants' tidak dikirim, atau array varian yang sudah dibersihkan.
+     */
+    private function parseVariants(array $body, array &$errors): ?array
+    {
+        if (!array_key_exists('variants', $body)) {
+            return null;
+        }
+        $raw = $body['variants'];
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ($raw as $i => $v) {
+            $n = $i + 1;
+            $vName = trim((string)($v['name'] ?? ''));
+            $vPrice = (int)($v['price'] ?? 0);
+            if ($vName === '') {
+                $errors[] = "Nama varian #{$n} wajib diisi.";
+            }
+            if ($vPrice <= 0) {
+                $errors[] = "Harga varian #{$n} harus lebih dari 0.";
+            }
+            $clean[] = [
+                'id'    => (int)($v['id'] ?? 0),
+                'name'  => $vName,
+                'price' => $vPrice,
+                'stock' => max(0, (int)($v['stock'] ?? 0)),
+                'image_id' => (int)($v['image_id'] ?? 0),
+            ];
+        }
+        return $clean;
+    }
+
     public function index(Request $request): void
     {
         $params = $request->getQueryParams();
@@ -82,7 +118,16 @@ class AdminProductController
         $price = (int)($body['price'] ?? 0);
         $stock = max(0, (int)($body['stock'] ?? 1));
 
+        $variantErrors = [];
+        $variants = $this->parseVariants($body, $variantErrors);
+        if (!empty($variants)) {
+            // Harga & stok produk diturunkan dari varian
+            $price = min(array_column($variants, 'price'));
+            $stock = array_sum(array_column($variants, 'stock'));
+        }
+
         $errors = [];
+        if (!empty($variantErrors)) $errors['variants'] = implode(' ', $variantErrors);
         if ($name === '') $errors['name'] = 'Nama produk wajib diisi.';
         if ($code === '') $errors['code'] = 'Kode produk wajib diisi.';
         if ($categoryId <= 0) $errors['category_id'] = 'Kategori wajib dipilih.';
@@ -128,6 +173,10 @@ class AdminProductController
             $primaryMotorId = (int)($body['primary_motor_id'] ?? ($motorIds[0] ?? 0));
             $this->repo->syncMotorTypes($productId, $motorIds, $primaryMotorId);
 
+            if (!empty($variants)) {
+                $this->repo->syncVariants($productId, $variants);
+            }
+
             Database::commit();
 
             $created = $this->repo->findById($productId, true);
@@ -152,6 +201,18 @@ class AdminProductController
         $categoryId = (int)($body['category_id'] ?? $existing['category_id']);
         $price = (int)($body['price'] ?? $existing['price']);
         $stock = max(0, (int)($body['stock'] ?? $existing['stock']));
+
+        $variantErrors = [];
+        $variants = $this->parseVariants($body, $variantErrors);
+        if (!empty($variantErrors)) {
+            Response::error('Mohon lengkapi formulir dengan benar.', 'VALIDATION_ERROR', 422, [
+                'variants' => implode(' ', $variantErrors),
+            ]);
+        }
+        if (!empty($variants)) {
+            $price = min(array_column($variants, 'price'));
+            $stock = array_sum(array_column($variants, 'stock'));
+        }
 
         if ($code !== $existing['code'] && $this->repo->isCodeTaken($code, $id)) {
             Response::error("Kode produk '{$code}' sudah digunakan oleh produk lain.", 'CODE_DUPLICATE', 409, [
@@ -187,6 +248,11 @@ class AdminProductController
                 $this->repo->syncMotorTypes($id, $motorIds, $primaryMotorId);
             }
 
+            // null = form tidak mengirim varian (jangan diubah); [] = hapus semua varian
+            if ($variants !== null) {
+                $this->repo->syncVariants($id, $variants);
+            }
+
             Database::commit();
 
             $updated = $this->repo->findById($id, true);
@@ -218,6 +284,14 @@ class AdminProductController
         }
 
         $newStock = max(0, (int)$body['stock']);
+
+        if ($this->repo->hasVariants($id)) {
+            Response::error(
+                'Produk ini punya varian. Atur stok tiap varian lewat halaman Edit Produk.',
+                'HAS_VARIANTS',
+                409
+            );
+        }
 
         try {
             $res = $this->repo->updateStock($id, $newStock);

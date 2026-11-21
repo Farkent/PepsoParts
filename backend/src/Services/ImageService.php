@@ -34,6 +34,14 @@ class ImageService
      */
     public function processUpload(array $file): array
     {
+        if (!extension_loaded('gd')) {
+            throw new RuntimeException('Ekstensi PHP GD belum aktif. Aktifkan extension=gd pada php.ini lalu restart Apache.');
+        }
+
+        if (!function_exists('imagewebp')) {
+            throw new RuntimeException('Support WebP pada ekstensi PHP GD belum tersedia.');
+        }
+
         if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
             throw new RuntimeException('Gagal mengunggah file. Kode error: ' . ($file['error'] ?? 'UNKNOWN'));
         }

@@ -113,6 +113,32 @@ class Router
         }
     }
 
+    /**
+     * Susun argumen method controller sesuai tipe parameternya, sehingga controller
+     * boleh memakai (Request $req, array $params) maupun (Request $req, Response $res, array $params).
+     */
+    private function resolveArguments(object $controller, string $method, Request $request, array $params): array
+    {
+        $args = [];
+        foreach ((new \ReflectionMethod($controller, $method))->getParameters() as $param) {
+            $type = $param->getType();
+            $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : null;
+
+            if ($typeName === Request::class) {
+                $args[] = $request;
+            } elseif ($typeName === Response::class) {
+                $args[] = new Response();
+            } elseif ($typeName === 'array') {
+                $args[] = $params;
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } else {
+                $args[] = null;
+            }
+        }
+        return $args;
+    }
+
     private function invokeHandler(mixed $handler, Request $request, array $params): void
     {
         try {
@@ -124,7 +150,7 @@ class Router
             if (is_array($handler) && count($handler) === 2) {
                 [$controllerClass, $method] = $handler;
                 $controller = new $controllerClass();
-                $controller->$method($request, $params);
+                $controller->$method(...$this->resolveArguments($controller, $method, $request, $params));
                 return;
             }
 

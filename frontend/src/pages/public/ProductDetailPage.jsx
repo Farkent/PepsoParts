@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Copy, Check, Share2, MessageCircle, ShoppingCart,
   ChevronLeft, ChevronRight, AlertTriangle, Bike, ZoomIn,
-  Sparkles, Bot
+  Sparkles, Bot, X
 } from 'lucide-react';
 import { getProduct, getRelatedProducts } from '../../api/endpoints';
 import { useCart } from '../../context/CartContext';
@@ -19,7 +19,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const { selectedMotor } = useMotor();
+  const { selectedMotor, motorTypes, selectMotor } = useMotor();
   const { success, error: showError } = useToast();
 
   const [product, setProduct] = useState(null);
@@ -29,18 +29,32 @@ export default function ProductDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [waSettings, setWaSettings] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // 'cart' | 'wa'
+  const touchStartX = useRef(null);
+  const didSwipe = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setProduct(null);
     setActiveImageIndex(0);
+    setSelectedVariantId(null);
+    setPickerOpen(false);
 
     getProduct(slug)
       .then((res) => {
         if (!mounted) return;
         if (!res?.data) { navigate('/404', { replace: true }); return; }
         setProduct(res.data);
+        // Produk dengan satu varian: langsung terpilih
+        if (res.data.variants?.length === 1) {
+          const only = res.data.variants[0];
+          setSelectedVariantId(only.id);
+          const at = (res.data.images || []).findIndex((im) => Number(im.id) === Number(only.image_id));
+          if (at >= 0) setActiveImageIndex(at);
+        }
 
         // Ambil produk terkait
         return getRelatedProducts(res.data.id);
@@ -76,7 +90,7 @@ export default function ProductDetailPage() {
   const handleShare = () => {
     if (!product) return;
     const url = window.location.href;
-    const text = `${product.name} (${product.code}) - ${formatRupiah(product.price)} | PEPSO PARTS`;
+    const text = `${product.name} (${product.code}) - ${(product.variants?.length || 0) > 1 ? 'mulai ' : ''}${formatRupiah(product.price)} | PEPSO PARTS`;
 
     if (navigator.share) {
       navigator.share({ title: text, url });
@@ -86,17 +100,76 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    const ok = addItem(product);
-    if (ok) success(`${product.name} ditambahkan ke keranjang.`);
+  const variants = product?.variants || [];
+  const hasVariants = variants.length > 0;
+  const selectedVariant = hasVariants ? variants.find((v) => v.id === selectedVariantId) || null : null;
+
+  const doAddToCart = (variant) => {
+    const ok = addItem(product, 1, variant);
+    if (ok) success(`${product.name}${variant ? ` (${variant.name})` : ''} ditambahkan ke keranjang.`);
   };
 
-  const buildWaUrl = () => {
+  const buildWaUrl = (variant = selectedVariant) => {
     if (!product || !waSettings) return '#';
     const appUrl = window.location.origin;
-    const msg = `Halo PEPSO PARTS, saya tertarik dengan:\n${product.name} (Kode: ${product.code})\nHarga: ${formatRupiah(product.price)}\nMotor: ${product.motor_types_text || '-'}\nLink: ${appUrl}/produk/${product.slug}`;
+    const price = variant ? variant.price : product.price;
+    const variantLine = variant ? `\nVarian: ${variant.name}` : '';
+    const msg = `Halo PEPSO PARTS, saya tertarik dengan:\n${product.name} (Kode: ${product.code})${variantLine}\nHarga: ${formatRupiah(price)}\nMotor: ${product.motor_types_text || '-'}\nLink: ${appUrl}/produk/${product.slug}`;
     return buildWhatsAppUrl(waSettings, msg);
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    if (hasVariants && !selectedVariant) {
+      setPendingAction('cart');
+      setPickerOpen(true);
+      return;
+    }
+    doAddToCart(selectedVariant);
+  };
+
+  const handleWhatsApp = (e) => {
+    if (hasVariants && !selectedVariant) {
+      e.preventDefault();
+      setPendingAction('wa');
+      setPickerOpen(true);
+    }
+  };
+
+  // Pilih varian: foto di galeri otomatis pindah ke foto varian tersebut
+  const chooseVariant = (variant) => {
+    setSelectedVariantId(variant.id);
+    const at = variant.image_id ? (product?.images || []).findIndex((im) => Number(im.id) === Number(variant.image_id)) : -1;
+    if (at >= 0) setActiveImageIndex(at);
+  };
+
+  const variantImage = (variant) =>
+    variant?.image_id ? (product?.images || []).find((im) => Number(im.id) === Number(variant.image_id)) : null;
+
+  // Geser foto di HP (kiri / kanan)
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    didSwipe.current = false;
+  };
+  const handleTouchEnd = (e, total) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40 || total < 2) return;
+    didSwipe.current = true;
+    setActiveImageIndex((i) => (dx < 0 ? Math.min(total - 1, i + 1) : Math.max(0, i - 1)));
+  };
+
+  // Pelanggan memilih varian dari popup, lalu aksi yang tertunda dilanjutkan
+  const handlePickVariant = (variant) => {
+    chooseVariant(variant);
+    setPickerOpen(false);
+    if (pendingAction === 'cart') {
+      doAddToCart(variant);
+    } else if (pendingAction === 'wa') {
+      window.open(buildWaUrl(variant), '_blank', 'noopener,noreferrer');
+    }
+    setPendingAction(null);
   };
 
   if (loading) return <ProductDetailSkeleton />;
@@ -105,7 +178,8 @@ export default function ProductDetailPage() {
   const images = product.images?.length ? product.images : [{ path: product.primary_image, thumb_path: product.primary_thumb, id: 0 }];
   const activeImage = images[activeImageIndex];
 
-  const isAvailable = product.status === 'available' && product.stock > 0;
+  const currentStock = selectedVariant ? selectedVariant.stock : product.stock;
+  const isAvailable = product.status === 'available' && product.stock > 0 && (!selectedVariant || selectedVariant.stock > 0);
 
   // Pengecekan kecocokan motor (deterministik)
   let compatStatus = 'unknown';
@@ -138,7 +212,12 @@ export default function ProductDetailPage() {
           {/* Gambar Utama */}
           <div
             className="relative aspect-[4/3] bg-muted-bg border border-neutral-200 overflow-hidden cursor-zoom-in"
-            onClick={() => setLightboxOpen(true)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => handleTouchEnd(e, images.length)}
+            onClick={() => {
+              if (didSwipe.current) { didSwipe.current = false; return; }
+              setLightboxOpen(true);
+            }}
           >
             {activeImage?.path ? (
               <img
@@ -156,6 +235,18 @@ export default function ProductDetailPage() {
             <div className="absolute bottom-3 right-3 p-1.5 bg-black/40 text-white rounded-sm">
               <ZoomIn className="w-4 h-4" />
             </div>
+
+            {/* Penanda jumlah foto (geser untuk melihat foto lain) */}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
+                {images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full ${i === activeImageIndex ? 'bg-brand' : 'bg-black/30'}`}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Navigasi Gambar */}
             {images.length > 1 && (
@@ -221,8 +312,56 @@ export default function ProductDetailPage() {
 
           {/* Harga */}
           <div className="text-3xl font-display font-extrabold text-ink">
-            {formatRupiah(product.price)}
+            {variants.length > 1 && !selectedVariant && (
+              <span className="text-sm font-bold text-muted-text uppercase mr-2">Mulai dari</span>
+            )}
+            {formatRupiah(selectedVariant ? selectedVariant.price : product.price)}
           </div>
+
+          {/* Pilihan Varian */}
+          {hasVariants && (
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-600 mb-2">
+                Pilihan
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const active = v.id === selectedVariantId;
+                  const empty = v.stock <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={empty}
+                      onClick={() => chooseVariant(v)}
+                      className={`flex items-center gap-2 px-2.5 py-2 border rounded-sm text-left transition-colors ${
+                        active
+                          ? 'border-brand bg-orange-50 ring-1 ring-brand'
+                          : 'border-neutral-300 bg-white hover:border-brand'
+                      } ${empty ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
+                    >
+                      {variantImage(v) && (
+                        <img
+                          src={variantImage(v).thumb_path || variantImage(v).path}
+                          alt=""
+                          className="w-10 h-10 object-cover rounded-sm flex-shrink-0"
+                        />
+                      )}
+                      <span>
+                        <span className="block text-sm font-bold text-ink">{v.name}</span>
+                        <span className="block text-xs text-muted-text">
+                          {formatRupiah(v.price)}{empty ? ' · Habis' : ''}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {!selectedVariant && (
+                <p className="text-[11px] text-muted-text mt-1.5">Pilih salah satu sebelum memesan.</p>
+              )}
+            </div>
+          )}
 
           {/* Kondisi & Stok */}
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted-bg border border-neutral-200 rounded-sm text-xs">
@@ -233,7 +372,9 @@ export default function ProductDetailPage() {
             </div>
             <div>
               <div className="text-muted-text font-bold uppercase mb-1">Stok</div>
-              <div className="font-bold text-base text-ink">{product.stock} unit</div>
+              <div className="font-bold text-base text-ink">
+                {hasVariants && !selectedVariant ? 'Pilih varian' : `${currentStock} unit`}
+              </div>
             </div>
           </div>
 
@@ -361,6 +502,7 @@ export default function ProductDetailPage() {
           </Button>
           <a
             href={buildWaUrl()}
+            onClick={handleWhatsApp}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold font-display uppercase tracking-wider bg-green-600 text-white hover:bg-green-700 border border-green-600 rounded-sm transition-colors"
@@ -396,6 +538,71 @@ export default function ProductDetailPage() {
             {related.map((p) => (
               <ProductCard key={p.id} product={p} myMotorSlug={selectedMotor?.slug} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popup pilih varian */}
+      {pickerOpen && hasVariants && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => { setPickerOpen(false); setPendingAction(null); }}
+        >
+          <div
+            className="bg-white w-full sm:max-w-md rounded-t-md sm:rounded-sm p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <h3 className="font-display font-extrabold uppercase text-lg text-ink">Pilih Varian</h3>
+              <button
+                type="button"
+                onClick={() => { setPickerOpen(false); setPendingAction(null); }}
+                className="p-1 text-neutral-500 hover:text-ink"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-text mb-4">
+              {product.name} tersedia dalam beberapa pilihan. Silakan pilih yang kamu butuhkan.
+            </p>
+            <div className="space-y-2">
+              {variants.map((v) => {
+                const empty = v.stock <= 0;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    disabled={empty}
+                    onClick={() => handlePickVariant(v)}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 border rounded-sm text-left transition-colors ${
+                      empty
+                        ? 'border-neutral-200 bg-neutral-50 opacity-50 cursor-not-allowed'
+                        : 'border-neutral-300 hover:border-brand hover:bg-orange-50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      {variantImage(v) && (
+                        <img
+                          src={variantImage(v).thumb_path || variantImage(v).path}
+                          alt=""
+                          className="w-12 h-12 object-cover rounded-sm flex-shrink-0"
+                        />
+                      )}
+                      <span>
+                        <span className="block font-bold text-ink text-sm">{v.name}</span>
+                        <span className="block text-xs text-muted-text">
+                          {empty ? 'Stok habis' : `Stok ${v.stock}`}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="font-display font-extrabold text-brand whitespace-nowrap">
+                      {formatRupiah(v.price)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

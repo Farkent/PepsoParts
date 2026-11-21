@@ -15,6 +15,17 @@ import { StatusBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
 
+// Pastikan nilai selalu berupa array, supaya .map() tidak membuat halaman crash
+const toArray = (v) => {
+  if (Array.isArray(v)) return v;
+  if (v && typeof v === 'object') {
+    for (const k of ['items', 'data', 'products', 'rows', 'list']) {
+      if (Array.isArray(v[k])) return v[k];
+    }
+  }
+  return [];
+};
+
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('stock'); // 'stock' | 'sales'
 
@@ -39,12 +50,13 @@ export default function ReportsPage() {
     setStockLoading(true);
     try {
       const res = await adminGetStockReport('json');
-      if (res?.success) {
-        setStockData(res.data);
-        setStockMeta(res.meta || {});
-      } else if (res?.data && res.data.success) {
-        setStockData(res.data.data);
-        setStockMeta(res.data.meta || {});
+      const payload = res?.success ? res : res?.data?.success ? res.data : null;
+      if (payload) {
+        setStockData(toArray(payload.data));
+        setStockMeta(payload.meta || payload.data?.meta || {});
+      } else {
+        console.warn('Respons laporan stok tidak dikenali:', res);
+        setStockData([]);
       }
     } catch (err) {
       console.error('Fetch stock report error:', err);
@@ -209,14 +221,14 @@ export default function ReportsPage() {
                         </td>
                       </tr>
                     ))
-                  ) : stockData.length === 0 ? (
+                  ) : toArray(stockData).length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-muted-text">
                         Tidak ada data stok.
                       </td>
                     </tr>
                   ) : (
-                    stockData.map((p) => {
+                    toArray(stockData).map((p) => {
                       const totalVal = (Number(p.price) || 0) * (Number(p.stock) || 0);
                       return (
                         <tr key={p.id} className="hover:bg-neutral-50">
@@ -347,11 +359,11 @@ export default function ReportsPage() {
               </h3>
               {salesLoading ? (
                 <Skeleton className="h-32 w-full" />
-              ) : !salesData || salesData.by_category?.length === 0 ? (
+              ) : !salesData || toArray(salesData.by_category).length === 0 ? (
                 <p className="text-xs text-muted-text py-4 text-center">Belum ada data penjualan.</p>
               ) : (
                 <div className="space-y-3">
-                  {salesData.by_category.map((cat, idx) => (
+                  {toArray(salesData.by_category).map((cat, idx) => (
                     <div key={idx} className="text-xs space-y-1">
                       <div className="flex justify-between font-semibold text-ink">
                         <span>{cat.category || 'Tanpa Kategori'}</span>
@@ -393,14 +405,14 @@ export default function ReportsPage() {
                           </td>
                         </tr>
                       ))
-                    ) : !salesData || salesData.orders?.length === 0 ? (
+                    ) : !salesData || toArray(salesData.orders).length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-muted-text">
                           Tidak ada pesanan pada rentang tanggal ini.
                         </td>
                       </tr>
                     ) : (
-                      salesData.orders.map((o, idx) => (
+                      toArray(salesData.orders).map((o, idx) => (
                         <tr key={idx} className="hover:bg-neutral-50">
                           <td className="py-2.5 px-4 font-mono font-bold text-ink">{o.order_code}</td>
                           <td className="py-2.5 px-4">
@@ -426,4 +438,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-

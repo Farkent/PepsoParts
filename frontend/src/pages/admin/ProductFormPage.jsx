@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Save, ArrowLeft, RefreshCw, Sparkles, Check } from 'lucide-react';
+import { Save, ArrowLeft, RefreshCw, Sparkles, Check, Plus, Trash2 } from 'lucide-react';
 import {
   adminGetProduct,
   adminCreateProduct,
@@ -44,6 +44,7 @@ export default function ProductFormPage() {
   });
 
   const [images, setImages] = useState([]);
+  const [variants, setVariants] = useState([]);
   const [errors, setErrors] = useState({});
   const [generatingAiDesc, setGeneratingAiDesc] = useState(false);
 
@@ -109,6 +110,15 @@ export default function ProductFormPage() {
             });
 
             setImages(p.images || []);
+            setVariants(
+              (p.variants || []).map((v) => ({
+                id: v.id,
+                name: v.name,
+                price: String(v.price),
+                stock: String(v.stock),
+                image_id: v.image_id || 0,
+              }))
+            );
           }
         })
         .catch((err) => {
@@ -169,6 +179,17 @@ export default function ProductFormPage() {
     });
   };
 
+  const addVariant = () =>
+    setVariants((prev) => [...prev, { id: 0, name: '', price: '', stock: '1', image_id: 0 }]);
+
+  const updateVariant = (index, field, value) =>
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)));
+
+  const removeVariant = (index) =>
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+
+  const hasVariants = variants.length > 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -182,6 +203,13 @@ export default function ProductFormPage() {
       condition_percent: formData.condition_percent ? Number(formData.condition_percent) : null,
       motor_type_ids: formData.motor_type_ids.map(Number),
       primary_motor_id: formData.primary_motor_id ? Number(formData.primary_motor_id) : 0,
+      variants: variants.map((v) => ({
+        id: v.id || 0,
+        name: v.name.trim(),
+        price: Number(v.price),
+        stock: Number(v.stock),
+        image_id: v.image_id || 0,
+      })),
     };
 
     try {
@@ -312,9 +340,10 @@ export default function ProductFormPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Input
-                label="Harga (Rp)"
+                label={hasVariants ? 'Harga (otomatis dari varian)' : 'Harga (Rp)'}
                 type="number"
-                required
+                required={!hasVariants}
+                disabled={hasVariants}
                 placeholder="1250000"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -324,10 +353,11 @@ export default function ProductFormPage() {
 
             <div>
               <Input
-                label="Jumlah Stok"
+                label={hasVariants ? 'Total Stok (otomatis dari varian)' : 'Jumlah Stok'}
                 type="number"
                 min="0"
-                required
+                required={!hasVariants}
+                disabled={hasVariants}
                 placeholder="1"
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
@@ -349,6 +379,127 @@ export default function ProductFormPage() {
                 <option value="unavailable">Tidak Tersedia</option>
               </select>
             </div>
+          </div>
+
+          {/* Varian Produk */}
+          <div className="pt-4 mt-4 border-t border-neutral-100 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                  Varian Produk (Opsional)
+                </div>
+                <p className="text-xs text-muted-text mt-0.5">
+                  Isi bila barang ini punya pilihan, misalnya &quot;Mur saja&quot;, &quot;Mangkuk saja&quot;,
+                  &quot;Mur + Mangkuk&quot;. Pelanggan wajib memilih salah satu saat memesan, dan tiap varian
+                  punya harga dan stok sendiri. Kosongkan bila produk hanya satu jenis.
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" icon={Plus} onClick={addVariant}>
+                Tambah Varian
+              </Button>
+            </div>
+
+            {hasVariants && (
+              <div className="space-y-2">
+                <div className="hidden sm:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-text px-1">
+                  <div className="col-span-5">Nama Varian</div>
+                  <div className="col-span-3">Harga (Rp)</div>
+                  <div className="col-span-3">Stok</div>
+                  <div className="col-span-1" />
+                </div>
+                {variants.map((v, i) => (
+                  <div key={v.id || `new-${i}`} className="grid grid-cols-12 gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="cth: Mur + Mangkuk"
+                      value={v.name}
+                      onChange={(e) => updateVariant(i, 'name', e.target.value)}
+                      className="col-span-12 sm:col-span-5 text-base sm:text-sm border border-neutral-300 rounded-sm px-3 py-2.5 focus:outline-none focus:border-brand bg-white"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Harga"
+                      value={v.price}
+                      onChange={(e) => updateVariant(i, 'price', e.target.value)}
+                      className="col-span-5 sm:col-span-3 text-base sm:text-sm border border-neutral-300 rounded-sm px-3 py-2.5 focus:outline-none focus:border-brand bg-white"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Stok"
+                      value={v.stock}
+                      onChange={(e) => updateVariant(i, 'stock', e.target.value)}
+                      className="col-span-5 sm:col-span-3 text-base sm:text-sm border border-neutral-300 rounded-sm px-3 py-2.5 focus:outline-none focus:border-brand bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeVariant(i)}
+                      title="Hapus varian"
+                      className="col-span-2 sm:col-span-1 p-2 text-neutral-400 hover:text-red-600 justify-self-center"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    {/* Pilih foto untuk varian ini (dari foto produk yang sudah diunggah) */}
+                    <div className="col-span-12 flex items-center gap-1.5 flex-wrap pb-2 border-b border-neutral-100">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-text mr-1">
+                        Foto varian:
+                      </span>
+                      {images.length === 0 ? (
+                        <span className="text-[11px] text-muted-text">
+                          Unggah foto produk dulu di bagian &quot;Foto Produk&quot; di bawah, lalu simpan dan pilih fotonya di sini.
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => updateVariant(i, 'image_id', 0)}
+                            className={`px-2 h-14 text-[10px] font-bold uppercase border rounded-sm ${
+                              !v.image_id ? 'border-brand bg-orange-50 text-brand' : 'border-neutral-300 text-neutral-500'
+                            }`}
+                          >
+                            Tanpa foto
+                          </button>
+                          {images.map((img) => (
+                            <button
+                              key={img.id}
+                              type="button"
+                              title="Klik untuk memilih foto ini"
+                              onClick={() => updateVariant(i, 'image_id', Number(img.id))}
+                              className={`relative w-14 h-14 rounded-sm overflow-hidden transition-opacity ${
+                                Number(v.image_id) === Number(img.id)
+                                  ? 'ring-2 ring-brand ring-offset-2'
+                                  : 'ring-1 ring-neutral-300 opacity-50 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={img.thumb_path || img.path} alt="" className="w-full h-full object-cover" />
+                              {Number(v.image_id) === Number(img.id) && (
+                                <span className="absolute top-0.5 right-0.5 bg-brand text-white rounded-full w-4 h-4 flex items-center justify-center">
+                                  <Check className="w-3 h-3" />
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {images.length > 0 && (
+                        <span className="w-full text-[11px] font-semibold text-brand">
+                          {(() => {
+                            const at = images.findIndex((im) => Number(im.id) === Number(v.image_id));
+                            return at >= 0 ? `✓ Foto terpilih: foto ke-${at + 1}` : 'Belum ada foto dipilih (klik salah satu foto di atas)';
+                          })()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-[11px] text-muted-text">
+                  Katalog menampilkan harga varian termurah, dan stok total dihitung dari semua varian.
+                </p>
+              </div>
+            )}
+            {errors.variants && <span className="text-xs text-red-600 font-medium">{errors.variants}</span>}
           </div>
         </div>
 

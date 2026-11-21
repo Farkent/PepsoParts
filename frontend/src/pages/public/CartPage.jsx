@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ArrowLeft } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { useCart, itemKey } from '../../context/CartContext';
 import { formatRupiah } from '../../utils/format';
 import Button from '../../components/ui/Button';
 
@@ -60,7 +60,7 @@ export default function CartPage() {
             const subtotal = item.price * item.quantity;
             return (
               <div
-                key={item.id}
+                key={itemKey(item)}
                 className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white border border-neutral-200 rounded-sm gap-4 hover:border-neutral-300 transition-colors"
               >
                 {/* Image & Info */}
@@ -87,6 +87,11 @@ export default function CartPage() {
                         {item.name}
                       </Link>
                     </h3>
+                    {item.variant_name && (
+                      <p className="text-xs font-semibold text-brand mt-0.5">
+                        Varian: {item.variant_name}
+                      </p>
+                    )}
                     <p className="text-sm font-bold text-neutral-900 mt-0.5">
                       {formatRupiah(item.price)}
                     </p>
@@ -104,7 +109,7 @@ export default function CartPage() {
                   <div className="flex items-center border border-neutral-300 rounded-sm">
                     <button
                       type="button"
-                      onClick={() => updateQty(item.id, item.quantity - 1)}
+                      onClick={() => updateQty(itemKey(item), item.quantity - 1)}
                       disabled={item.quantity <= 1}
                       className="p-1.5 text-neutral-600 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Kurangi kuantitas"
@@ -116,7 +121,7 @@ export default function CartPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => updateQty(item.id, item.quantity + 1)}
+                      onClick={() => updateQty(itemKey(item), item.quantity + 1)}
                       disabled={item.stock ? item.quantity >= item.stock : false}
                       className="p-1.5 text-neutral-600 hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Tambah kuantitas"
@@ -136,7 +141,7 @@ export default function CartPage() {
                   {/* Remove Button */}
                   <button
                     type="button"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(itemKey(item))}
                     className="p-2 text-neutral-400 hover:text-red-600 transition-colors"
                     title="Hapus dari keranjang"
                   >

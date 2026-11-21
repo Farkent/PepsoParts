@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Star, Trash2, Camera, Image as ImageIcon } from 'lucide-react';
 import Button from '../ui/Button';
+import { getCsrfToken } from '../../api/client';
 
 export default function ImageUploader({
   productId,
@@ -30,7 +31,7 @@ export default function ImageUploader({
       const res = await fetch(`/api/admin/products/${productId}/images`, {
         method: 'POST',
         headers: {
-          'X-CSRF-Token': localStorage.getItem('pepso_csrf_token') || '',
+          'X-CSRF-Token': getCsrfToken(),
         },
         credentials: 'include',
         body: formData,
@@ -58,7 +59,7 @@ export default function ImageUploader({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': localStorage.getItem('pepso_csrf_token') || '',
+          'X-CSRF-Token': getCsrfToken(),
         },
         credentials: 'include',
         body: JSON.stringify({ is_primary: true }),
@@ -79,7 +80,7 @@ export default function ImageUploader({
       const res = await fetch(`/api/admin/products/${productId}/images/${imageId}`, {
         method: 'DELETE',
         headers: {
-          'X-CSRF-Token': localStorage.getItem('pepso_csrf_token') || '',
+          'X-CSRF-Token': getCsrfToken(),
         },
         credentials: 'include',
       });

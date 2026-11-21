@@ -38,6 +38,7 @@ class OrderController
 
         foreach ($items as $item) {
             $productId = (int)($item['product_id'] ?? 0);
+            $variantId = (int)($item['variant_id'] ?? 0);
             $qty       = (int)($item['quantity'] ?? 1);
 
             $stmt = $db->prepare(
@@ -50,27 +51,57 @@ class OrderController
                 $allValid = false;
                 $validated[] = [
                     'product_id' => $productId,
+                    'variant_id' => $variantId ?: null,
                     'valid'      => false,
                     'error'      => 'Produk sudah tidak tersedia.',
                 ];
                 continue;
             }
 
-            $isAvailable = $p['status'] === 'available' && (int)$p['stock'] >= $qty;
+            $price = (float)$p['price'];
+            $stock = (int)$p['stock'];
+            $label = $p['name'];
+            $error = null;
+
+            $vStmt = $db->prepare("SELECT COUNT(*) FROM product_variants WHERE product_id = ?");
+            $vStmt->execute([$productId]);
+            $hasVariants = (int)$vStmt->fetchColumn() > 0;
+
+            if ($hasVariants) {
+                $vq = $db->prepare("SELECT name, price, stock FROM product_variants WHERE id = ? AND product_id = ?");
+                $vq->execute([$variantId, $productId]);
+                $v = $vq->fetch(\PDO::FETCH_ASSOC);
+                if (!$v) {
+                    $error = "Varian untuk \"{$p['name']}\" belum dipilih atau sudah dihapus.";
+                } else {
+                    $price = (float)$v['price'];
+                    $stock = (int)$v['stock'];
+                    $label = $p['name'] . ' (' . $v['name'] . ')';
+                }
+            }
+
+            if ($error === null) {
+                if ($p['status'] !== 'available') {
+                    $error = 'Produk sudah habis/tidak aktif.';
+                } elseif ($stock < $qty) {
+                    $error = "Sisa stok {$label} hanya {$stock}.";
+                }
+            }
+
+            $isAvailable = $error === null;
             if (!$isAvailable) {
                 $allValid = false;
             }
 
             $validated[] = [
                 'product_id' => $productId,
+                'variant_id' => $variantId ?: null,
                 'valid'      => $isAvailable,
-                'name'       => $p['name'],
-                'price'      => (float)$p['price'],
-                'stock'      => (int)$p['stock'],
+                'name'       => $label,
+                'price'      => $price,
+                'stock'      => $stock,
                 'status'     => $p['status'],
-                'error'      => !$isAvailable 
-                    ? ($p['status'] !== 'available' ? 'Produk sudah habis/tidak aktif.' : "Sisa stok hanya {$p['stock']}.")
-                    : null,
+                'error'      => $error,
             ];
         }
 

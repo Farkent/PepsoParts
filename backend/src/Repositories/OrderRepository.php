@@ -57,8 +57,11 @@ class OrderRepository
             $totalAmount = 0.0;
             $itemSnapshots = [];
 
+            $productRepo = new ProductRepository();
+
             foreach ($data['items'] as $item) {
                 $productId = (int)$item['product_id'];
+                $variantId = (int)($item['variant_id'] ?? 0);
                 $qty       = (int)$item['quantity'];
 
                 // Lock the product row
@@ -73,32 +76,75 @@ class OrderRepository
                 if (!$product) {
                     throw new RuntimeException("Produk ID {$productId} tidak ditemukan.");
                 }
-                if ($product['status'] !== 'available' || (int)$product['stock'] < $qty) {
-                    throw new RuntimeException(
-                        "Stok tidak cukup untuk produk \"{$product['name']}\". " .
-                        "Tersedia: {$product['stock']}, diminta: {$qty}."
-                    );
+                if ($product['status'] !== 'available') {
+                    throw new RuntimeException("Produk \"{$product['name']}\" sudah tidak tersedia.");
                 }
 
-                $unitPrice = (float)$product['price'];
-                $subtotal  = $unitPrice * $qty;
+                $variantName = null;
+                $snapshotName = $product['name'];
+
+                if ($productRepo->hasVariants($productId)) {
+                    // Produk bervarian: pelanggan wajib memilih varian
+                    if ($variantId <= 0) {
+                        throw new RuntimeException("Silakan pilih varian untuk produk \"{$product['name']}\".");
+                    }
+                    $vStmt = $this->db->prepare(
+                        "SELECT id, name, price, stock FROM product_variants
+                         WHERE id = ? AND product_id = ? FOR UPDATE"
+                    );
+                    $vStmt->execute([$variantId, $productId]);
+                    $variant = $vStmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$variant) {
+                        throw new RuntimeException("Varian untuk produk \"{$product['name']}\" tidak ditemukan.");
+                    }
+                    if ((int)$variant['stock'] < $qty) {
+                        throw new RuntimeException(
+                            "Stok tidak cukup untuk \"{$product['name']}\" varian {$variant['name']}. " .
+                            "Tersedia: {$variant['stock']}, diminta: {$qty}."
+                        );
+                    }
+
+                    $unitPrice    = (float)$variant['price'];
+                    $variantName  = $variant['name'];
+                    $snapshotName = $product['name'] . ' (' . $variant['name'] . ')';
+
+                    $this->db->prepare(
+                        "UPDATE product_variants SET stock = stock - ? WHERE id = ?"
+                    )->execute([$qty, $variantId]);
+                    $productRepo->recalcFromVariants($productId);
+                } else {
+                    $variantId = 0;
+                    if ((int)$product['stock'] < $qty) {
+                        throw new RuntimeException(
+                            "Stok tidak cukup untuk produk \"{$product['name']}\". " .
+                            "Tersedia: {$product['stock']}, diminta: {$qty}."
+                        );
+                    }
+
+                    $unitPrice = (float)$product['price'];
+
+                    // Deduct stock
+                    $newStock = (int)$product['stock'] - $qty;
+                    $newStatus = $newStock === 0 ? 'sold' : 'available';
+                    $this->db->prepare(
+                        "UPDATE products SET stock = ?, status = ? WHERE id = ?"
+                    )->execute([$newStock, $newStatus, $productId]);
+                }
+
+                $subtotal = $unitPrice * $qty;
                 $totalAmount += $subtotal;
 
                 $itemSnapshots[] = [
                     'product_id'   => $productId,
+                    'variant_id'   => $variantId > 0 ? $variantId : null,
                     'product_code' => $product['code'] ?? ('PS-' . $productId),
-                    'product_name' => $product['name'],
+                    'product_name' => $snapshotName,
+                    'variant_name' => $variantName,
                     'unit_price'   => $unitPrice,
                     'quantity'     => $qty,
                     'subtotal'     => $subtotal,
                 ];
-
-                // Deduct stock
-                $newStock = (int)$product['stock'] - $qty;
-                $newStatus = $newStock === 0 ? 'sold' : 'available';
-                $this->db->prepare(
-                    "UPDATE products SET stock = ?, status = ? WHERE id = ?"
-                )->execute([$newStock, $newStatus, $productId]);
             }
 
             // Insert order
@@ -122,15 +168,18 @@ class OrderRepository
             // Insert order_items
             $itemStmt = $this->db->prepare(
                 "INSERT INTO order_items
-                    (order_id, product_id, product_code, product_name, unit_price, quantity, subtotal)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    (order_id, product_id, variant_id, product_code, product_name, variant_name,
+                     unit_price, quantity, subtotal)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             foreach ($itemSnapshots as $snap) {
                 $itemStmt->execute([
                     $orderId,
                     $snap['product_id'],
+                    $snap['variant_id'],
                     $snap['product_code'],
                     $snap['product_name'],
+                    $snap['variant_name'],
                     $snap['unit_price'],
                     $snap['quantity'],
                     $snap['subtotal'],
@@ -163,6 +212,7 @@ class OrderRepository
                     'product_id', oi.product_id,
                     'product_code', oi.product_code,
                     'product_name', oi.product_name,
+                    'variant_name', oi.variant_name,
                     'unit_price', oi.unit_price,
                     'quantity', oi.quantity,
                     'subtotal', oi.subtotal
@@ -193,6 +243,7 @@ class OrderRepository
                         'product_id', oi.product_id,
                         'product_code', oi.product_code,
                         'product_name', oi.product_name,
+                    'variant_name', oi.variant_name,
                         'unit_price', oi.unit_price,
                         'quantity', oi.quantity,
                         'subtotal', oi.subtotal
@@ -330,9 +381,10 @@ class OrderRepository
     private function restoreStock(int $orderId): void
     {
         $items = $this->db->prepare(
-            "SELECT product_id, quantity FROM order_items WHERE order_id = ?"
+            "SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?"
         );
         $items->execute([$orderId]);
+        $productRepo = new ProductRepository();
 
         foreach ($items->fetchAll(PDO::FETCH_ASSOC) as $item) {
             if (!$item['product_id']) continue;
@@ -343,14 +395,22 @@ class OrderRepository
             );
             $lock->execute([$item['product_id']]);
             $product = $lock->fetch(PDO::FETCH_ASSOC);
+            if (!$product) continue;
 
-            if ($product) {
-                $newStock  = (int)$product['stock'] + (int)$item['quantity'];
-                $newStatus = $product['status'] === 'sold' ? 'available' : $product['status'];
+            if (!empty($item['variant_id'])) {
+                // Kembalikan stok ke varian (jika varian masih ada), lalu hitung ulang produk
                 $this->db->prepare(
-                    "UPDATE products SET stock = ?, status = ? WHERE id = ?"
-                )->execute([$newStock, $newStatus, $item['product_id']]);
+                    "UPDATE product_variants SET stock = stock + ? WHERE id = ? AND product_id = ?"
+                )->execute([(int)$item['quantity'], $item['variant_id'], $item['product_id']]);
+                $productRepo->recalcFromVariants((int)$item['product_id']);
+                continue;
             }
+
+            $newStock  = (int)$product['stock'] + (int)$item['quantity'];
+            $newStatus = $product['status'] === 'sold' ? 'available' : $product['status'];
+            $this->db->prepare(
+                "UPDATE products SET stock = ?, status = ? WHERE id = ?"
+            )->execute([$newStock, $newStatus, $item['product_id']]);
         }
     }
 

@@ -36,6 +36,7 @@ export default function CheckoutPage() {
 
     const payload = items.map((i) => ({
       product_id: i.id,
+      variant_id: i.variant_id || null,
       quantity: i.quantity,
     }));
 
@@ -120,6 +121,7 @@ export default function CheckoutPage() {
         website: formData.website, // Honeypot
         items: items.map((i) => ({
           product_id: i.id,
+          variant_id: i.variant_id || null,
           quantity: i.quantity,
         })),
       };
@@ -178,7 +180,7 @@ export default function CheckoutPage() {
             </p>
             <ul className="list-disc list-inside mt-2 text-xs space-y-0.5">
               {stockIssues.map((issue) => (
-                <li key={issue.product_id}>{issue.error}</li>
+                <li key={`${issue.product_id}:${issue.variant_id || 0}`}>{issue.error}</li>
               ))}
             </ul>
           </div>
@@ -291,9 +293,12 @@ export default function CheckoutPage() {
 
             <div className="divide-y divide-neutral-200 max-h-80 overflow-y-auto py-2">
               {items.map((item) => (
-                <div key={item.id} className="py-2.5 flex items-center justify-between text-xs gap-3">
+                <div key={`${item.id}:${item.variant_id || 0}`} className="py-2.5 flex items-center justify-between text-xs gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-ink truncate">{item.name}</p>
+                    {item.variant_name && (
+                      <p className="text-brand font-semibold">Varian: {item.variant_name}</p>
+                    )}
                     <p className="text-muted-text">
                       {item.quantity} x {formatRupiah(item.price)}
                     </p>
