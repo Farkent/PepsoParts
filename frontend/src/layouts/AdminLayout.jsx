@@ -60,7 +60,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/login?tab=admin', { replace: true });
+      navigate('/login', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
 
@@ -90,7 +90,7 @@ export default function AdminLayout() {
   const handleLogout = async () => {
     if (confirm('Apakah Anda yakin ingin keluar dari sesi admin?')) {
       await logout();
-      navigate('/login?tab=admin');
+      navigate('/login');
     }
   };
 

@@ -39,8 +39,13 @@ export function CustomerAuthProvider({ children }) {
     setCustomer(null);
   };
 
+  const setCustomerSession = (customerData, csrfToken) => {
+    setCustomer(customerData);
+    if (csrfToken) setCsrfToken(csrfToken);
+  };
+
   return (
-    <CustomerAuthContext.Provider value={{ customer, loading, login, register, logout, checkAuth }}>
+    <CustomerAuthContext.Provider value={{ customer, loading, login, register, logout, checkAuth, setCustomerSession }}>
       {children}
     </CustomerAuthContext.Provider>
   );

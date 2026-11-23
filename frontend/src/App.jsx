@@ -56,10 +56,10 @@ export default function App() {
           <Route path="*"       element={<NotFoundPage />} />
         </Route>
 
-        {/* ── Halaman Login Terpadu ── */}
+        {/* ── Halaman Login Terpadu (Admin & Pelanggan) ── */}
         <Route path="/login" element={<LoginPage />} />
-        {/* Redirect lama /admin/login ke halaman login terpadu tab admin */}
-        <Route path="/admin/login" element={<Navigate to="/login?tab=admin" replace />} />
+        {/* Redirect lama /admin/login ke halaman login terpadu */}
+        <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
         {/* ── Rute Admin (dilindungi AdminLayout) ── */}
         <Route path="/admin" element={<AdminLayout />}>

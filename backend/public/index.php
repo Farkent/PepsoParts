@@ -29,6 +29,7 @@ use Pepso\Controllers\AdminSettingsController;
 use Pepso\Controllers\AdminOrderController;
 use Pepso\Controllers\AdminReportController;
 use Pepso\Controllers\CustomerAuthController;
+use Pepso\Controllers\AuthController;
 
 // 1. Muat konfigurasi .env
 Config::load(__DIR__ . '/../.env');
@@ -61,6 +62,7 @@ $router->post('/api/orders', [OrderController::class, 'createOrder'], [CustomerA
 $router->get('/api/orders/{code}', [OrderController::class, 'trackOrder']);
 
 // Autentikasi dan dashboard pelanggan
+$router->post('/api/auth/login', [AuthController::class, 'login']);
 $router->post('/api/customer/register', [CustomerAuthController::class, 'register']);
 $router->post('/api/customer/login', [CustomerAuthController::class, 'login']);
 $router->get('/api/customer/me', [CustomerAuthController::class, 'me']);

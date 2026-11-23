@@ -59,8 +59,13 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const setAdminSession = (adminData, csrfToken) => {
+    setAdmin(adminData);
+    if (csrfToken) setCsrfToken(csrfToken);
+  };
+
   return (
-    <AuthContext.Provider value={{ admin, loading, login, logout, checkAuth, isAuthenticated: !!admin }}>
+    <AuthContext.Provider value={{ admin, loading, login, logout, checkAuth, setAdminSession, isAuthenticated: !!admin }}>
       {children}
     </AuthContext.Provider>
   );

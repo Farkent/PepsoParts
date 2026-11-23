@@ -29,6 +29,9 @@ export const validateCart = (items) => api.post('/cart/validate', { items });
 export const createOrder   = (data) => api.post('/orders', data);
 export const getOrderByCode = (code, token) => api.get(`/orders/${code}?token=${encodeURIComponent(token)}`);
 
+// ── Autentikasi Terpadu (Admin & Pelanggan) ────────────────────
+export const unifiedLogin = (email, password) => api.post('/auth/login', { email, password });
+
 // ── Akun pelanggan ────────────────────────────────────────────
 export const customerRegister = (data) => api.post('/customer/register', data);
 export const customerLogin = (data) => api.post('/customer/login', data);

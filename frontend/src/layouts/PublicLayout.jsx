@@ -7,12 +7,14 @@ import { useMotor } from '../context/MotorContext';
 import Button from '../components/ui/Button';
 import FloatingChat from '../components/chat/FloatingChat';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [motorModalOpen, setMotorModalOpen] = useState(false);
   const { totalItems } = useCart();
   const { customer } = useCustomerAuth();
+  const { admin } = useAuth();
   const { selectedMotor, motorTypes, selectMotor } = useMotor();
   const location = useLocation();
 
@@ -78,18 +80,26 @@ export default function PublicLayout() {
               )}
             </Link>
 
-            <Link to={customer ? '/akun' : '/login'} className="hidden sm:inline-block">
-              <Button variant="outline" size="sm" icon={UserRound}>
-                {customer ? 'Akun' : 'Masuk'}
-              </Button>
-            </Link>
-
-            {/* Tombol ADMIN (Outline) */}
-            <Link to="/login?tab=admin" className="hidden sm:inline-block">
-              <Button variant="outline" size="sm" icon={Shield}>
-                Admin
-              </Button>
-            </Link>
+            {/* Tombol Masuk / Akun / Admin (Tunggal) */}
+            {admin ? (
+              <Link to="/admin" className="hidden sm:inline-block">
+                <Button variant="outline" size="sm" icon={Shield}>
+                  Admin
+                </Button>
+              </Link>
+            ) : customer ? (
+              <Link to="/akun" className="hidden sm:inline-block">
+                <Button variant="outline" size="sm" icon={UserRound}>
+                  Akun
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login" className="hidden sm:inline-block">
+                <Button variant="outline" size="sm" icon={UserRound}>
+                  Masuk
+                </Button>
+              </Link>
+            )}
 
             {/* Hamburger Button (Mobile) */}
             <button
@@ -143,22 +153,34 @@ export default function PublicLayout() {
                   </Link>
                 );
               })}
-              <Link
-                to={customer ? '/akun' : '/login'}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2.5 font-display text-base uppercase tracking-wider font-bold text-ink hover:text-brand border border-neutral-200 rounded-sm flex items-center gap-2"
-              >
-                <UserRound className="w-4 h-4 text-brand" />
-                {customer ? 'Dashboard Pelanggan' : 'Masuk / Daftar'}
-              </Link>
-              <Link
-                to="/login?tab=admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2.5 font-display text-base uppercase tracking-wider font-bold text-neutral-600 hover:text-brand border border-neutral-200 rounded-sm flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4 text-brand" />
-                Portal Admin
-              </Link>
+              {admin ? (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 font-display text-base uppercase tracking-wider font-bold text-neutral-700 hover:text-brand border border-neutral-200 rounded-sm flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4 text-brand" />
+                  Dashboard Admin
+                </Link>
+              ) : customer ? (
+                <Link
+                  to="/akun"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 font-display text-base uppercase tracking-wider font-bold text-ink hover:text-brand border border-neutral-200 rounded-sm flex items-center gap-2"
+                >
+                  <UserRound className="w-4 h-4 text-brand" />
+                  Dashboard Pelanggan
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 font-display text-base uppercase tracking-wider font-bold text-ink hover:text-brand border border-neutral-200 rounded-sm flex items-center gap-2"
+                >
+                  <UserRound className="w-4 h-4 text-brand" />
+                  Masuk / Daftar
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -186,7 +208,7 @@ export default function PublicLayout() {
                 <li><Link to="/" className="hover:text-brand">Katalog Sparepart</Link></li>
                 <li><Link to="/tentang" className="hover:text-brand">Tentang PEPSO PARTS</Link></li>
                 <li><Link to="/kontak" className="hover:text-brand">Hubungi Kami & Lokasi</Link></li>
-                <li><Link to="/login?tab=admin" className="hover:text-brand">Login Admin</Link></li>
+                <li><Link to={admin ? "/admin" : customer ? "/akun" : "/login"} className="hover:text-brand">{admin ? "Dashboard Admin" : customer ? "Akun Saya" : "Masuk Akun"}</Link></li>
               </ul>
             </div>
             <div>
