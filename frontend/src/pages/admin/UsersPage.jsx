@@ -51,9 +51,16 @@ export default function UsersPage() {
         per_page: 15,
       });
 
-      setUsers(Array.isArray(res?.data) ? res.data : []);
-      if (res?.meta) {
-        setMeta(res.meta);
+      const userList = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
+      const metaData = res?.meta || res?.data?.meta || null;
+
+      setUsers(userList);
+      if (metaData) {
+        setMeta(metaData);
       }
     } catch (err) {
       showError(err.message || 'Gagal memuat daftar pengguna.');

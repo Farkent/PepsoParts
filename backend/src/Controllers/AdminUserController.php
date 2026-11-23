@@ -163,18 +163,15 @@ class AdminUserController
         ');
         $stats = $statsStmt->fetch() ?: ['total' => 0, 'active' => 0, 'deleted' => 0];
 
-        Response::json([
-            'data' => $formatted,
-            'meta' => [
-                'total' => $total,
-                'page' => $page,
-                'per_page' => $perPage,
-                'last_page' => (int)ceil($total / $perPage),
-                'stats' => [
-                    'total' => (int)$stats['total'],
-                    'active' => (int)$stats['active'],
-                    'deleted' => (int)$stats['deleted'],
-                ],
+        Response::json($formatted, 200, [
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'last_page' => (int)ceil($total / $perPage),
+            'stats' => [
+                'total' => (int)$stats['total'],
+                'active' => (int)$stats['active'],
+                'deleted' => (int)$stats['deleted'],
             ],
         ]);
     }
@@ -242,18 +239,15 @@ class AdminUserController
         ');
         $stats = $statsStmt->fetch() ?: ['total' => 0, 'active' => 0, 'deleted' => 0];
 
-        Response::json([
-            'data' => $formatted,
-            'meta' => [
-                'total' => $total,
-                'page' => $page,
-                'per_page' => $perPage,
-                'last_page' => (int)ceil($total / $perPage),
-                'stats' => [
-                    'total' => (int)$stats['total'],
-                    'active' => (int)$stats['active'],
-                    'deleted' => (int)$stats['deleted'],
-                ],
+        Response::json($formatted, 200, [
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'last_page' => (int)ceil($total / $perPage),
+            'stats' => [
+                'total' => (int)$stats['total'],
+                'active' => (int)$stats['active'],
+                'deleted' => (int)$stats['deleted'],
             ],
         ]);
     }
