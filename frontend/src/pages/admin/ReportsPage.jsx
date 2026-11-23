@@ -167,7 +167,7 @@ export default function ReportsPage() {
                   {stockMeta.total_products ?? 0} Jenis
                 </p>
               </div>
-              <div className="w-10 h-10 bg-orange-100 text-brand rounded-sm flex items-center justify-center">
+              <div className="w-10 h-10 bg-brand-light text-brand rounded-sm flex items-center justify-center">
                 <Package className="w-5 h-5" />
               </div>
             </div>

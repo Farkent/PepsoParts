@@ -157,7 +157,7 @@ export default function LoginPage() {
             onClick={() => switchMode('login')}
             className={`py-3.5 text-xs font-bold uppercase tracking-widest transition-colors border-b-2 ${
               mode === 'login'
-                ? 'border-brand text-brand bg-orange-50/60'
+                ? 'border-brand text-brand bg-brand-light'
                 : 'border-transparent text-muted-text hover:text-ink'
             }`}
           >
@@ -168,7 +168,7 @@ export default function LoginPage() {
             onClick={() => switchMode('register')}
             className={`py-3.5 text-xs font-bold uppercase tracking-widest transition-colors border-b-2 ${
               mode === 'register'
-                ? 'border-brand text-brand bg-orange-50/60'
+                ? 'border-brand text-brand bg-brand-light'
                 : 'border-transparent text-muted-text hover:text-ink'
             }`}
           >

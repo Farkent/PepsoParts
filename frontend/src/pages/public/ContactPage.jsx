@@ -44,7 +44,7 @@ export default function ContactPage() {
 
         {settings.address && (
           <div className="p-5 border border-neutral-200 bg-white flex gap-4 items-start">
-            <div className="w-12 h-12 bg-orange-100 flex items-center justify-center flex-shrink-0 rounded-sm">
+            <div className="w-12 h-12 bg-brand-light flex items-center justify-center flex-shrink-0 rounded-sm">
               <MapPin className="w-6 h-6 text-brand" />
             </div>
             <div>

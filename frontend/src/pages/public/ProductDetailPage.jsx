@@ -341,7 +341,7 @@ export default function ProductDetailPage() {
                       onClick={() => chooseVariant(v)}
                       className={`flex items-center gap-2 px-2.5 py-2 border rounded-sm text-left transition-colors ${
                         active
-                          ? 'border-brand bg-orange-50 ring-1 ring-brand'
+                          ? 'border-brand bg-brand-light ring-1 ring-brand'
                           : 'border-neutral-300 bg-white hover:border-brand'
                       } ${empty ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
                     >
@@ -435,7 +435,7 @@ export default function ProductDetailPage() {
                     className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1"
                   >
                     <Bot className="w-3.5 h-3.5" />
-                    Konsultasi teknis dengan Mas Wahyu AI
+                    Konsultasi teknis dengan Pexo AI
                   </button>
                 </div>
               </div>
@@ -472,7 +472,7 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent('pepso:open-chat', {
-                      detail: { prompt: `Tanya detail dan kondisi fisik untuk ${product.name} (${product.code}) dong Mas Wahyu` }
+                      detail: { prompt: `Tanya detail dan kondisi fisik untuk ${product.name} (${product.code}) dong Pexo` }
                     }));
                   }}
                   className="text-[11px] font-bold text-brand hover:underline inline-flex items-center gap-1 ml-2 flex-shrink-0"
@@ -583,7 +583,7 @@ export default function ProductDetailPage() {
                     className={`w-full flex items-center justify-between gap-3 px-4 py-3 border rounded-sm text-left transition-colors ${
                       empty
                         ? 'border-neutral-200 bg-neutral-50 opacity-50 cursor-not-allowed'
-                        : 'border-neutral-300 hover:border-brand hover:bg-orange-50'
+                        : 'border-neutral-300 hover:border-brand hover:bg-brand-light'
                     }`}
                   >
                     <span className="flex items-center gap-3">

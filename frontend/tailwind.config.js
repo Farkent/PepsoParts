@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#F05A22',
-          dark: '#D44A15',
-          light: '#FFF0EA',
+          DEFAULT: '#1B6B38',
+          dark: '#14532B',
+          light: '#EBF7EE',
         },
         ink: {
           DEFAULT: '#111214',
@@ -28,8 +28,8 @@ export default {
           text: '#656770',
         },
         status: {
-          availableText: '#207F40',
-          availableBg: '#E9F6EC',
+          availableText: '#1B6B38',
+          availableBg: '#EBF7EE',
           soldText: '#FFFFFF',
           soldBg: '#26272A',
           unavailableText: '#656770',

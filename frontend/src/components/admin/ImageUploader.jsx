@@ -140,7 +140,7 @@ export default function ImageUploader({
       ) : images.length === 0 ? (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="p-8 border-2 border-dashed border-neutral-300 hover:border-brand rounded-sm text-center cursor-pointer bg-neutral-50 hover:bg-orange-50/30 transition-colors"
+          className="p-8 border-2 border-dashed border-neutral-300 hover:border-brand rounded-sm text-center cursor-pointer bg-neutral-50 hover:bg-brand-light/50 transition-colors"
         >
           <Camera className="w-10 h-10 text-brand mx-auto mb-2" />
           <div className="font-display font-bold uppercase text-sm text-ink mb-1">

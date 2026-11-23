@@ -16,7 +16,7 @@ export default function Logo({ size = 'md', isDark = false, to = '/' }) {
       <div className={`relative ${iconSize} flex-shrink-0 transition-transform group-hover:scale-105 duration-150`}>
         <svg viewBox="0 0 40 40" className="w-full h-full drop-shadow-sm">
           {/* Slanted polygon */}
-          <polygon points="10,4 38,4 30,36 2,36" fill="#F05A22" />
+          <polygon points="10,4 38,4 30,36 2,36" fill="#1B6B38" />
           {/* Bold White P */}
           <text
             x="19"

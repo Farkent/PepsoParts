@@ -15,7 +15,7 @@ export default function Badge({
   const variantClasses = {
     default: 'bg-neutral-100 text-neutral-800 border-neutral-200',
     brand: 'bg-brand text-white border-brand',
-    brandLight: 'bg-orange-50 text-brand border-orange-200 font-semibold',
+    brandLight: 'bg-brand-light text-brand border-brand/20 font-semibold',
     
     // Status Ketersediaan (Sesuai Design Tokens Bagian 8)
     available: 'bg-status-availableBg text-status-availableText border-emerald-200 font-bold',

@@ -236,7 +236,7 @@ export default function PublicLayout() {
                     onClick={(e) => handleQuickScroll(e, '#ai-konsultan', '/')}
                     className="hover:text-brand transition-colors cursor-pointer"
                   >
-                    Konsultasi AI (Mas Wahyu)
+                    Konsultasi AI (Pexo)
                   </a>
                 </li>
                 <li>
@@ -312,7 +312,7 @@ export default function PublicLayout() {
                     }}
                     className={`w-full text-left p-3 border rounded-sm transition-all flex items-center justify-between ${
                       isSelected
-                        ? 'border-brand bg-orange-50 text-brand font-bold'
+                        ? 'border-brand bg-brand-light text-brand font-bold'
                         : 'border-neutral-200 hover:border-neutral-400 text-ink'
                     }`}
                   >

@@ -142,7 +142,7 @@ export default function CategoriesPage() {
                 <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
                   <td className="py-3 px-4 font-bold text-ink">{c.name}</td>
                   <td className="py-3 px-4">
-                    <span className="font-display font-bold text-brand text-xs px-2 py-0.5 bg-orange-50 border border-orange-200 rounded-sm">
+                    <span className="font-display font-bold text-brand text-xs px-2 py-0.5 bg-brand-light border border-brand/20 rounded-sm">
                       {c.code}
                     </span>
                   </td>

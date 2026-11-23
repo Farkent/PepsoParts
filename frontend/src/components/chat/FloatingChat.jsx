@@ -25,7 +25,7 @@ export default function FloatingChat() {
     {
       id: 1,
       role: 'model',
-      text: 'Halo Bro! 🏍️ Saya Mas Wahyu AI — asisten teknis cerdas spesialis suku cadang original Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS). Ada part yang lagi kamu cari atau mau konsultasi seputar mesin 2T?',
+      text: 'Halo Bro! ⚙️ Aku Pexo, AI Assistant spesialis suku cadang Ninja 2 Tak di PEPSO PARTS. Lagi nyari part original KGP untuk Ninja R, RR, atau SS? Kasih tahu aja part yang lagi dicari!',
       suggested_products: [],
       quick_replies: [
         'Blok Seher Ninja RR 1855',
@@ -117,7 +117,7 @@ export default function FloatingChat() {
         {
           id: Date.now() + 1,
           role: 'model',
-          text: 'Maaf Bro, respons AI terhambat. Tapi jangan khawatir, kamu bisa langsung konsultasi fisik & ketersediaan part ke Mas Wahyu via WhatsApp ya!',
+          text: 'Maaf Bro, respons AI terhambat. Tapi jangan khawatir, kamu bisa langsung konsultasi fisik dan ketersediaan part via WhatsApp ya!',
           suggested_products: [],
           quick_replies: ['Tanya via WhatsApp', 'Lihat Semua Katalog'],
           fallback_to_whatsapp: true,
@@ -149,7 +149,7 @@ export default function FloatingChat() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-display font-bold uppercase tracking-wider text-sm text-white">
-                    Mas Wahyu - AI Advisor
+                    Pexo - PepsoParts
                   </h3>
                   <span className="px-1.5 py-0.5 bg-white/20 text-white text-[9px] font-mono font-bold uppercase rounded">
                     Ninja 2T
@@ -306,13 +306,13 @@ export default function FloatingChat() {
                     {!isUser && msg.fallback_to_whatsapp && (
                       <div className="pt-1">
                         <a
-                          href="https://wa.me/6281289892024?text=Halo%20Mas%20Wahyu%2C%20saya%20mau%20konsultasi%20part%20Ninja%202T"
+                          href="https://wa.me/6281289892024?text=Halo%20PEPSO%20PARTS%2C%20saya%20mau%20konsultasi%20part%20Ninja%202T"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[11px] font-bold rounded-full transition-colors shadow-xs"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
-                          Chat WhatsApp Mas Wahyu
+                          Chat WhatsApp PEPSO PARTS
                         </a>
                       </div>
                     )}
@@ -336,7 +336,7 @@ export default function FloatingChat() {
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse"></div>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse delay-75"></div>
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse delay-150"></div>
-                  <span className="text-[11px] ml-1">Mas Wahyu AI sedang mengetik...</span>
+                  <span className="text-[11px] ml-1">Pexo AI sedang mengetik...</span>
                 </div>
               </div>
             )}
@@ -367,7 +367,7 @@ export default function FloatingChat() {
             </div>
             <div className="text-[10px] text-muted-text mt-1.5 text-center flex items-center justify-center gap-1">
               <Sparkles className="w-2.5 h-2.5 text-[#1B6B38]" />
-              <span>Ditenagai AI Google Gemini · Mas Wahyu AI</span>
+              <span>Ditenagai AI Google Gemini · Pexo AI</span>
             </div>
           </div>
         </div>
@@ -400,7 +400,7 @@ export default function FloatingChat() {
               </div>
               <div>
                 <div className="font-bold text-[11px] uppercase tracking-wider text-green-400 font-display flex items-center gap-1">
-                  <span>Mas Wahyu AI Online</span>
+                  <span>Pexo AI Online</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                 </div>
                 <p className="text-neutral-200 text-[11px] leading-snug mt-0.5">

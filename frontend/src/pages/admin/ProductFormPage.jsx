@@ -456,7 +456,7 @@ export default function ProductFormPage() {
                             type="button"
                             onClick={() => updateVariant(i, 'image_id', 0)}
                             className={`px-2 h-14 text-[10px] font-bold uppercase border rounded-sm ${
-                              !v.image_id ? 'border-brand bg-orange-50 text-brand' : 'border-neutral-300 text-neutral-500'
+                              !v.image_id ? 'border-brand bg-brand-light text-brand' : 'border-neutral-300 text-neutral-500'
                             }`}
                           >
                             Tanpa foto
@@ -624,7 +624,7 @@ export default function ProductFormPage() {
               type="button"
               disabled={generatingAiDesc}
               onClick={handleGenerateAiDescription}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-brand text-white text-xs font-bold uppercase tracking-wider rounded-sm shadow-sm hover:from-orange-600 hover:to-brand-dark transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white text-xs font-bold uppercase tracking-wider rounded-sm shadow-sm transition-all disabled:opacity-50"
             >
               <Sparkles className={`w-3.5 h-3.5 ${generatingAiDesc ? 'animate-spin' : ''}`} />
               {generatingAiDesc ? 'Menyusun Draf...' : '⚡ Buat Draf dengan AI'}

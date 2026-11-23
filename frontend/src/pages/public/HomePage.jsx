@@ -148,7 +148,7 @@ export default function HomePage() {
             <AnimatedHeading
               as="h2"
               className="text-xl sm:text-2xl font-display font-extrabold uppercase text-white tracking-wide"
-              text="Tanya Mas Wahyu AI — Konsultan Suku Cadang & Mesin Ninja 2-Tak"
+              text="Tanya Pexo AI — Konsultan Suku Cadang & Mesin Ninja 2-Tak"
             />
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
               Bingung kecocokan part, cara rawat Super KIPS, atau setelan karbu? Asisten AI kami dilatih khusus dengan pengetahuan mendalam mekanik Ninja 150 (R, RR, SS) dan data stok live toko.
@@ -204,7 +204,7 @@ export default function HomePage() {
           className="w-full pl-10 pr-44 sm:pr-52 py-3 text-base border border-neutral-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand rounded-sm"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] bg-amber-500/10 text-brand px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border border-amber-500/20">
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] bg-brand/10 text-brand px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border border-brand/20">
             <Sparkles className="w-2.5 h-2.5 text-brand animate-pulse" />
             AI Search
           </span>

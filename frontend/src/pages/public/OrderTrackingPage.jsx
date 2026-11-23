@@ -223,7 +223,7 @@ export default function OrderTrackingPage() {
                         isDone
                           ? 'bg-brand text-white'
                           : 'bg-neutral-100 text-neutral-400 border border-neutral-200'
-                      } ${isCurrent ? 'ring-4 ring-orange-100' : ''}`}
+                      } ${isCurrent ? 'ring-4 ring-brand-light' : ''}`}
                     >
                       <Icon className="w-5 h-5" />
                     </div>

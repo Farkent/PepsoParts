@@ -33,10 +33,10 @@ class GeminiProvider implements AiProviderInterface
 
         try {
             $catalogContext = $this->getCatalogContext();
-            $systemInstruction = "Anda adalah Asisten Virtual Ahli & Mekanik Konsultan resmi untuk 'PEPSO PARTS', toko dan bengkel spesialis suku cadang bekas original Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS) milik Mas Wahyu Dwi Adrianto yang berlokasi di Sentul, Bogor. " .
+            $systemInstruction = "Anda adalah 'Pexo', Asisten AI resmi untuk 'PEPSO PARTS', toko dan bengkel spesialis suku cadang bekas original Kawasaki Ninja 2-Tak (Ninja R, RR, SS) yang berlokasi di Sentul, Bogor. " .
                 "Gaya komunikasi Anda: Ramah, santun namun akrab dengan bahasa komunitas pecinta motor Ninja 2-Tak (gunakan sapaan 'Bro' atau 'Mas'), solutif, paham teknis mesin 2-tak (Super KIPS, karburator PWK/PWL, blok silinder 1855/1878, oli samping, knalpot). " .
                 "Anda dapat menjawab SEMUA pertanyaan seputar suku cadang, cara perawatan, masalah teknis motor 2-tak, konsultasi pembelian, informasi toko, maupun pertanyaan umum. " .
-                "Jika pengguna menanyakan ketersediaan produk, rujuklah pada data stok katalog ready berikut ini. Jangan mengarang harga atau stok di luar data katalog:\n" .
+                "PENTING: Jika pengguna menanyakan ketersediaan atau mencari produk tertentu, Anda WAJIB mencocokkan dengan data katalog di bawah. Jika produk DITEMUKAN di katalog, jawab bahwa produk tersedia dan cantumkan detail produknya (nama, kode, harga, stok). Jika produk TIDAK DITEMUKAN di katalog, jawab dengan jujur bahwa produk tersebut belum tersedia atau tidak ada di katalog saat ini. Jangan mengarang harga atau stok di luar data katalog.\n" .
                 "Katalog Produk Ready Saat Ini:\n{$catalogContext}\n\n" .
                 "Format output Anda HARUS berupa JSON valid tanpa teks lain di luar kurung kurawal, dengan format:\n" .
                 "{\n" .
@@ -101,7 +101,7 @@ class GeminiProvider implements AiProviderInterface
             return [
                 'text'                 => $parsed['text'],
                 'suggested_products'   => $suggestedProducts,
-                'quick_replies'        => $parsed['quick_replies'] ?? ['Konsultasi via WA Mas Wahyu', 'Cek Blok Seher', 'Cek Knalpot'],
+                'quick_replies'        => $parsed['quick_replies'] ?? ['Konsultasi via WhatsApp', 'Cek Blok Seher', 'Cek Knalpot'],
                 'fallback_to_whatsapp' => (bool)($parsed['fallback_to_whatsapp'] ?? false),
             ];
         } catch (\Throwable $e) {
@@ -129,7 +129,7 @@ class GeminiProvider implements AiProviderInterface
         try {
             $cat = $categoryName ?: 'Sparepart Kawasaki Ninja 2-Tak';
             $title = $productName ?: ($cat . ' Original');
-            $prompt = "Buatkan deskripsi produk penjualan suku cadang motor bekas original untuk toko online 'PEPSO PARTS' (Milik Mas Wahyu Dwi Adrianto di Sentul).\n\n" .
+            $prompt = "Buatkan deskripsi produk penjualan suku cadang motor bekas original untuk toko online 'PEPSO PARTS' di Sentul, Bogor.\n\n" .
                       "Nama Produk: {$title}\n" .
                       "Kategori: {$cat}\n" .
                       "Catatan Kondisi Fisik: " . ($notes ?: 'Original copotan normal mulus, drat dan sirip aman') . "\n\n" .
@@ -215,7 +215,7 @@ class GeminiProvider implements AiProviderInterface
              LEFT JOIN categories c ON c.id = p.category_id
              WHERE p.status = 'available' AND p.deleted_at IS NULL
              ORDER BY p.id ASC
-             LIMIT 30"
+             LIMIT 100"
         );
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

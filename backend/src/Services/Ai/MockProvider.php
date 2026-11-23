@@ -29,7 +29,7 @@ class MockProvider implements AiProviderInterface
         // 1. Sapaan / Greeting
         if (preg_match('/\b(halo|hai|assalamu|pagi|siang|sore|malam|permisi|bang|mas|bro|gan)\b/i', $msgLower) && strlen($msgLower) < 30) {
             return [
-                'text' => "Halo Bro! Selamat datang di PEPSO PARTS — bengkel dan penyedia sparepart bekas original Kawasaki Ninja 2-Tak (Ninja R, RR, SS) milik Mas Wahyu Dwi Adrianto di Sentul, Bogor. Ada sparepart yang lagi dicari atau mau konsultasi seputar mesin Ninja 2T Bro?",
+                'text' => "Halo Bro! ⚙️ Aku Pexo, AI Assistant spesialis suku cadang Ninja 2 Tak di PEPSO PARTS. Lagi nyari part original KGP untuk Ninja R, RR, atau SS? Kasih tahu aja part yang lagi dicari!",
                 'suggested_products' => $this->getFeaturedProducts(2),
                 'quick_replies' => [
                     'Blok Seher Ninja RR',
@@ -58,7 +58,7 @@ class MockProvider implements AiProviderInterface
         // 3. Super KIPS (Perawatan, macet, fungsi, setting)
         if (preg_match('/\b(kips|super kips|superkips|macet|nyangkut|katup|valves|valve)\b/i', $msgLower)) {
             return [
-                'text' => "Tips Super KIPS dari Mas Wahyu Bro:\n\n" .
+                'text' => "Tips Super KIPS dari Pexo Bro:\n\n" .
                           "1. *Karakter KIPS:* Katup Super KIPS normalnya mulai membuka di putaran 7.000 RPM. Sensasinya motor bakal ngejambak kuat.\n" .
                           "2. *Penyebab Macet:* Kerak oli samping dan sisa karbon pembakaran menumpuk di batang katup/gigi pemutar.\n" .
                           "3. *Perawatan Rutin:* Bersihkan rumah katup KIPS pakai karbu cleaner atau bensin tiap 3.000-5.000 km. Pastikan oli samping tidak terlalu pekat atau berkualitas jelek.\n" .
@@ -85,7 +85,7 @@ class MockProvider implements AiProviderInterface
                 'quick_replies' => [
                     'Blok Seher Standar',
                     'Karburator PWK 28',
-                    'Tanya Settingan ke Mas Wahyu'
+                    'Tanya Settingan ke Pexo AI'
                 ],
                 'fallback_to_whatsapp' => false
             ];
@@ -120,7 +120,7 @@ class MockProvider implements AiProviderInterface
                 'quick_replies' => [
                     'Lihat Karburator PWK 28',
                     'Lihat Karburator PWL 26',
-                    'Chat Mas Wahyu'
+                    'Chat Pexo AI'
                 ],
                 'fallback_to_whatsapp' => false
             ];
@@ -181,7 +181,7 @@ class MockProvider implements AiProviderInterface
                 $replyText .= "• *{$p['name']}* ({$p['code']}) — {$priceFormatted} [Kondisi: " . strtoupper($p['condition_grade'] ?? 'Good') . "]\n";
             }
 
-            $replyText .= "\nSemua barang di atas dijamin original copotan pilihan Mas Wahyu. Mau langsung checkout atau tanya detail fisiknya Bro?";
+            $replyText .= "\nSemua barang di atas dijamin original copotan pilihan PEPSO PARTS. Mau langsung checkout atau tanya detail fisiknya Bro?";
 
             return [
                 'text' => $replyText,
@@ -207,11 +207,11 @@ class MockProvider implements AiProviderInterface
 
         // 10. Jawaban Umum Cerdas & Ramah (Mampu menjawab apa pun seputar Ninja 2-Tak dan bengkel)
         return [
-            'text' => "Pertanyaan bagus Bro! Soal '{$message}', di PEPSO PARTS kami fokus pada suku cadang bekas original copotan dan restorasi performa Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS).\n\n" .
-                      "Kalau barang yang kamu maksud belum ada di etalase web, bisa jadi unit motor bahan baru masuk dan lagi proses pembongkaran di bengkel Sentul. Kamu bisa langsung ngobrol bareng Mas Wahyu di WhatsApp untuk tanya stok gudang, konsultasi kecocokan part, atau request barang copotan tertentu!",
+            'text' => "Maaf Bro, untuk '{$message}' belum tersedia di katalog PEPSO PARTS saat ini. Kami fokus pada suku cadang bekas original copotan Kawasaki Ninja 2-Tak (Ninja R, RR, SS).\n\n" .
+                      "Kalau barang yang kamu cari belum ada di etalase, bisa jadi unit motor bahan baru masuk dan lagi proses pembongkaran di bengkel Sentul. Kamu bisa langsung hubungi via WhatsApp untuk tanya stok gudang atau request barang copotan tertentu!",
             'suggested_products' => $this->getFeaturedProducts(2),
             'quick_replies' => [
-                'Chat WhatsApp Mas Wahyu',
+                'Chat WhatsApp PEPSO PARTS',
                 'Cek Stok Blok Seher',
                 'Cek Stok Knalpot',
                 'Lokasi Bengkel Sentul'
@@ -366,7 +366,7 @@ class MockProvider implements AiProviderInterface
         $title = $productName ?: ($cat . ' Original Kawasaki Ninja 2-Tak');
         $noteText = $notes ? trim($notes) : 'Kondisi barang mulus copotan unit normal, drat dan sirip aman, siap pasang.';
 
-        return "Dijual {$title} copotan original bawaan motor Kawasaki Ninja 2-Tak (Kondisi Istimewa Pilihan Mas Wahyu PEPSO PARTS).\n\n" .
+        return "Dijual {$title} copotan original bawaan motor Kawasaki Ninja 2-Tak (Kondisi Istimewa Pilihan PEPSO PARTS).\n\n" .
                "Kondisi Fisik & Spesifikasi:\n" .
                "• Keaslian: 100% Original Kawasaki OEM bawaan motor (Bukan part variasi murah / KW)\n" .
                "• Keutuhan: Fisik terawat, drat baut utuh, sirip pendingin tidak ada yang patah, tidak ada retak/pecah\n" .
