@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  MessageSquare,
   X,
   Send,
   Sparkles,
@@ -11,8 +10,7 @@ import {
   MessageCircle,
   Bike,
   ChevronDown,
-  Wrench,
-  CheckCircle,
+  ArrowUp,
 } from 'lucide-react';
 import { aiChat } from '../../api/endpoints';
 import { useMotor } from '../../context/MotorContext';
@@ -27,7 +25,7 @@ export default function FloatingChat() {
     {
       id: 1,
       role: 'model',
-      text: 'Halo Bro! Selamat datang di PEPSO PARTS. Saya Mas Wahyu AI — asisten teknis cerdas spesialis suku cadang bekas original Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS). Ada part yang lagi kamu cari atau mau konsultasi seputar mesin 2T?',
+      text: 'Halo Bro! 🏍️ Saya Mas Wahyu AI — asisten teknis cerdas spesialis suku cadang original Kawasaki Ninja 150 2-Tak (Ninja R, RR, SS). Ada part yang lagi kamu cari atau mau konsultasi seputar mesin 2T?',
       suggested_products: [],
       quick_replies: [
         'Blok Seher Ninja RR 1855',
@@ -97,7 +95,6 @@ export default function FloatingChat() {
         history,
       });
 
-      // Robust extraction: handles both res = { success: true, data: {...} } and axios-style res = { data: { success: true, data: {...} } }
       const payload = res?.data?.text ? res.data : (res?.data?.data || res?.data);
 
       if (payload && (res?.success || res?.data?.success || payload.text)) {
@@ -120,7 +117,7 @@ export default function FloatingChat() {
         {
           id: Date.now() + 1,
           role: 'model',
-          text: 'Maaf Bro, jaringan sedang sibuk atau respons AI terhambat. Tapi jangan khawatir, kamu bisa langsung konsultasi fisik & ketersediaan part ke Mas Wahyu via WhatsApp ya!',
+          text: 'Maaf Bro, respons AI terhambat. Tapi jangan khawatir, kamu bisa langsung konsultasi fisik & ketersediaan part ke Mas Wahyu via WhatsApp ya!',
           suggested_products: [],
           quick_replies: ['Tanya via WhatsApp', 'Lihat Semua Katalog'],
           fallback_to_whatsapp: true,
@@ -140,72 +137,26 @@ export default function FloatingChat() {
 
   return (
     <>
-      {/* ─── Floating Launcher Button with Proactive Bubble ─── */}
-      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
-        {!isOpen && showBubble && (
-          <div className="mb-2 max-w-[280px] sm:max-w-xs bg-ink text-white text-xs p-3 rounded-md shadow-2xl border border-neutral-700 animate-in fade-in slide-in-from-bottom-2 relative group cursor-pointer"
-               onClick={() => { setIsOpen(true); setShowBubble(false); }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowBubble(false); }}
-              className="absolute top-1.5 right-1.5 text-neutral-400 hover:text-white text-xs p-0.5"
-              aria-label="Tutup"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-            <div className="flex items-start gap-2.5 pr-3">
-              <div className="w-7 h-7 rounded-full bg-brand/20 flex items-center justify-center flex-shrink-0 text-brand mt-0.5 border border-brand/40">
-                <Sparkles className="w-4 h-4 animate-spin text-brand" />
-              </div>
-              <div>
-                <div className="font-bold text-[11px] uppercase tracking-wider text-brand font-display flex items-center gap-1">
-                  <span>Mas Wahyu AI Online</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                </div>
-                <p className="text-neutral-200 text-[11px] leading-snug mt-0.5">
-                  Bingung cari part atau setelan Ninja 2T? <strong>Klik untuk ngobrol!</strong>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!isOpen && (
-          <button
-            onClick={() => { setIsOpen(true); setShowBubble(false); }}
-            className="flex items-center gap-2.5 px-4 py-3 bg-brand hover:bg-brand-dark text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-105 group border-2 border-white/20 focus:outline-none"
-            aria-label="Tanya AI Asisten"
-          >
-            <div className="relative">
-              <Sparkles className="w-5 h-5 text-amber-200 animate-pulse" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400 ring-2 ring-brand"></span>
-            </div>
-            <span className="font-display font-bold uppercase tracking-wider text-xs">
-              Tanya Mas Wahyu AI
-            </span>
-          </button>
-        )}
-      </div>
-
       {/* ─── Chat Window Modal / Sheet ─── */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[95vw] sm:w-[430px] h-[600px] max-h-[85vh] bg-white border border-neutral-300 rounded-sm shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
-          {/* Header */}
-          <div className="bg-ink text-white p-3.5 border-b border-neutral-800 flex items-center justify-between relative z-10">
+        <div className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 w-[92vw] sm:w-[410px] h-[560px] max-h-[76vh] bg-white border border-neutral-200 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-5 duration-200">
+          {/* Header Hijau seperti Referensi Gambar */}
+          <div className="bg-[#1B6B38] text-white p-3.5 flex items-center justify-between relative z-10 shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-brand/20 border border-brand/40 flex items-center justify-center text-brand">
-                <Wrench className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-bold text-xs">
+                <Bot className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-display font-bold uppercase tracking-wider text-sm text-white">
-                    PEPSO AI ASSISTANT
+                    Mas Wahyu - AI Advisor
                   </h3>
-                  <span className="px-1.5 py-0.2 bg-brand/20 text-brand text-[9px] font-mono font-bold uppercase rounded border border-brand/40">
-                    Gemini 1.5
+                  <span className="px-1.5 py-0.5 bg-white/20 text-white text-[9px] font-mono font-bold uppercase rounded">
+                    Ninja 2T
                   </span>
                 </div>
-                <p className="text-[10px] text-neutral-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>
+                <p className="text-[10px] text-white/80 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse inline-block"></span>
                   Konsultan Ahli Kawasaki Ninja 2-Tak
                 </p>
               </div>
@@ -213,17 +164,17 @@ export default function FloatingChat() {
 
             <button
               onClick={() => setIsOpen(false)}
-              className="text-neutral-400 hover:text-white p-1 rounded-sm transition-colors"
+              className="text-white/80 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors"
               aria-label="Tutup Obrolan"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Subheader: Motor Type Selector */}
+          {/* Subheader: Target Motor Selector */}
           <div className="bg-neutral-50 px-3.5 py-2 border-b border-neutral-200 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 text-neutral-600 font-medium">
-              <Bike className="w-3.5 h-3.5 text-brand" />
+              <Bike className="w-3.5 h-3.5 text-[#1B6B38]" />
               <span>Target Motor:</span>
             </div>
 
@@ -231,14 +182,14 @@ export default function FloatingChat() {
               <button
                 type="button"
                 onClick={() => setShowMotorMenu(!showMotorMenu)}
-                className="flex items-center gap-1 font-bold text-ink hover:text-brand bg-white px-2 py-1 rounded border border-neutral-300 text-xs shadow-xs"
+                className="flex items-center gap-1 font-bold text-ink hover:text-[#1B6B38] bg-white px-2 py-1 rounded border border-neutral-300 text-xs shadow-2xs"
               >
                 <span>{selectedMotor?.name || 'Pilih Ninja Kamu'}</span>
                 <ChevronDown className="w-3 h-3" />
               </button>
 
               {showMotorMenu && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-300 rounded shadow-lg z-20 py-1">
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-300 rounded-md shadow-lg z-20 py-1">
                   <button
                     onClick={() => {
                       selectMotor(null);
@@ -257,7 +208,7 @@ export default function FloatingChat() {
                       }}
                       className={`w-full text-left px-3 py-1.5 text-xs ${
                         selectedMotor?.slug === m.slug
-                          ? 'bg-brand/10 text-brand font-bold'
+                          ? 'bg-[#1B6B38]/10 text-[#1B6B38] font-bold'
                           : 'text-neutral-700 hover:bg-neutral-100'
                       }`}
                     >
@@ -279,17 +230,17 @@ export default function FloatingChat() {
                   className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   {!isUser && (
-                    <div className="w-7 h-7 rounded bg-ink text-brand flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
-                      <Bot className="w-4 h-4" />
+                    <div className="w-7 h-7 rounded-full bg-[#1B6B38] text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
+                      <Bot className="w-3.5 h-3.5" />
                     </div>
                   )}
 
-                  <div className={`max-w-[85%] space-y-2`}>
+                  <div className="max-w-[85%] space-y-2">
                     <div
-                      className={`p-3 rounded-sm leading-relaxed whitespace-pre-wrap ${
+                      className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-wrap ${
                         isUser
-                          ? 'bg-brand text-white font-medium rounded-tr-none shadow-sm'
-                          : 'bg-white text-ink border border-neutral-200 rounded-tl-none shadow-subtle'
+                          ? 'bg-[#1B6B38] text-white font-medium rounded-tr-xs shadow-xs'
+                          : 'bg-white text-ink border border-neutral-200 rounded-tl-xs shadow-xs'
                       }`}
                     >
                       {msg.text}
@@ -307,28 +258,28 @@ export default function FloatingChat() {
                               key={p.id}
                               to={`/produk/${p.slug || p.code}`}
                               onClick={() => setIsOpen(false)}
-                              className="flex items-center gap-2 p-2 bg-white border border-neutral-200 hover:border-brand rounded-sm shadow-subtle transition-all group"
+                              className="flex items-center gap-2 p-2 bg-white border border-neutral-200 hover:border-[#1B6B38] rounded-xl shadow-xs transition-all group"
                             >
                               {p.primary_image ? (
                                 <img
                                   src={p.primary_image}
                                   alt={p.name}
-                                  className="w-10 h-10 object-cover rounded-xs border border-neutral-100"
+                                  className="w-10 h-10 object-cover rounded-md border border-neutral-100"
                                 />
                               ) : (
-                                <div className="w-10 h-10 bg-neutral-100 rounded-xs flex items-center justify-center text-neutral-400">
+                                <div className="w-10 h-10 bg-neutral-100 rounded-md flex items-center justify-center text-neutral-400">
                                   <Bike className="w-5 h-5" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="text-xs font-bold text-ink truncate group-hover:text-brand">
+                                <div className="text-xs font-bold text-ink truncate group-hover:text-[#1B6B38]">
                                   {p.name}
                                 </div>
                                 <div className="text-[10px] text-muted-text font-mono">
                                   {p.code} • {formatRupiah(p.price)}
                                 </div>
                               </div>
-                              <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-brand flex-shrink-0" />
+                              <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[#1B6B38] flex-shrink-0" />
                             </Link>
                           ))}
                         </div>
@@ -343,7 +294,7 @@ export default function FloatingChat() {
                             key={i}
                             type="button"
                             onClick={() => handleSend(reply)}
-                            className="px-2.5 py-1 bg-white hover:bg-neutral-50 border border-neutral-300 hover:border-brand text-[11px] text-neutral-700 rounded-full transition-all text-left shadow-2xs font-medium"
+                            className="px-3 py-1 bg-white hover:bg-neutral-50 border border-neutral-300 hover:border-[#1B6B38] text-[11px] text-neutral-700 rounded-full transition-all text-left shadow-2xs font-medium"
                           >
                             {reply}
                           </button>
@@ -358,7 +309,7 @@ export default function FloatingChat() {
                           href="https://wa.me/6281289892024?text=Halo%20Mas%20Wahyu%2C%20saya%20mau%20konsultasi%20part%20Ninja%202T"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[11px] font-bold rounded-sm transition-colors shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[11px] font-bold rounded-full transition-colors shadow-xs"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                           Chat WhatsApp Mas Wahyu
@@ -368,7 +319,7 @@ export default function FloatingChat() {
                   </div>
 
                   {isUser && (
-                    <div className="w-7 h-7 rounded bg-brand text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
+                    <div className="w-7 h-7 rounded-full bg-neutral-800 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
                       <User className="w-4 h-4" />
                     </div>
                   )}
@@ -378,13 +329,13 @@ export default function FloatingChat() {
 
             {loading && (
               <div className="flex gap-2.5 justify-start">
-                <div className="w-7 h-7 rounded bg-ink text-brand flex items-center justify-center flex-shrink-0 shadow-xs">
-                  <Bot className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-full bg-[#1B6B38] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <Bot className="w-3.5 h-3.5" />
                 </div>
-                <div className="bg-white border border-neutral-200 p-3 rounded-sm rounded-tl-none shadow-subtle flex items-center gap-1.5 text-neutral-500">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse delay-75"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse delay-150"></div>
+                <div className="bg-white border border-neutral-200 p-3 rounded-2xl rounded-tl-xs shadow-xs flex items-center gap-1.5 text-neutral-500">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse delay-75"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1B6B38] animate-pulse delay-150"></div>
                   <span className="text-[11px] ml-1">Mas Wahyu AI sedang mengetik...</span>
                 </div>
               </div>
@@ -392,35 +343,125 @@ export default function FloatingChat() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Footer */}
+          {/* Input Footer seperti Gambar Referensi */}
           <div className="p-3 bg-white border-t border-neutral-200">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-neutral-100 rounded-2xl px-3 py-1.5 border border-neutral-200 focus-within:border-[#1B6B38] focus-within:ring-1 focus-within:ring-[#1B6B38]">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Tanyakan part, masalah KIPS, oli, atau karbu..."
-                className="flex-1 px-3 py-2 text-xs border border-neutral-300 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand rounded-sm"
+                placeholder="Tulis pesanmu..."
+                className="flex-1 bg-transparent py-1.5 text-xs text-ink placeholder:text-neutral-400 focus:outline-none"
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading}
-                className="px-3.5 py-2 bg-brand hover:bg-brand-dark text-white rounded-sm disabled:opacity-50 transition-colors shadow-xs"
+                className="w-8 h-8 rounded-full bg-[#1B6B38] hover:bg-[#155d30] disabled:bg-neutral-300 text-white flex items-center justify-center transition-all disabled:cursor-not-allowed shadow-xs"
                 aria-label="Kirim"
               >
-                <Send className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
             <div className="text-[10px] text-muted-text mt-1.5 text-center flex items-center justify-center gap-1">
-              <Sparkles className="w-2.5 h-2.5 text-amber-500" />
-              <span>Ditenagai AI Google Gemini & Inventaris Live PEPSO PARTS</span>
+              <Sparkles className="w-2.5 h-2.5 text-[#1B6B38]" />
+              <span>Ditenagai AI Google Gemini · Mas Wahyu AI</span>
             </div>
           </div>
         </div>
       )}
+
+      {/* ─── Floating Launcher Button with Rotating Morph Animation ─── */}
+      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
+        {/* Proactive Bubble saat Chat Ditutup */}
+        {!isOpen && showBubble && (
+          <div
+            className="mb-3 max-w-[280px] sm:max-w-xs bg-ink text-white text-xs p-3 rounded-xl shadow-2xl border border-neutral-700 animate-in fade-in slide-in-from-bottom-2 relative group cursor-pointer"
+            onClick={() => {
+              setIsOpen(true);
+              setShowBubble(false);
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowBubble(false);
+              }}
+              className="absolute top-1.5 right-1.5 text-neutral-400 hover:text-white text-xs p-0.5"
+              aria-label="Tutup"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <div className="flex items-start gap-2.5 pr-3">
+              <div className="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 text-green-400 mt-0.5 border border-green-500/40">
+                <Sparkles className="w-4 h-4 animate-spin text-green-400" />
+              </div>
+              <div>
+                <div className="font-bold text-[11px] uppercase tracking-wider text-green-400 font-display flex items-center gap-1">
+                  <span>Mas Wahyu AI Online</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                </div>
+                <p className="text-neutral-200 text-[11px] leading-snug mt-0.5">
+                  Bingung cari part atau setelan Ninja 2T? <strong>Klik untuk ngobrol!</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tombol Bundar Hijau (Berganti ke 'X' dengan Animasi Putar & Skala) */}
+        <button
+          onClick={() => {
+            setIsOpen((prev) => !prev);
+            if (!isOpen) setShowBubble(false);
+          }}
+          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#1B6B38] hover:bg-[#155d30] text-white flex items-center justify-center shadow-[0_8px_25px_rgba(27,107,56,0.45)] hover:shadow-[0_12px_32px_rgba(27,107,56,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none z-50 cursor-pointer overflow-hidden"
+          aria-label={isOpen ? 'Tutup chat asisten' : 'Buka chat asisten'}
+        >
+          {/* 1. Ikon Chat Bag (Tampil saat chat ditutup) */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out transform ${
+              isOpen
+                ? 'rotate-90 scale-0 opacity-0 pointer-events-none'
+                : 'rotate-0 scale-100 opacity-100'
+            }`}
+          >
+            {/* Bentuk bubble tas belanja persis seperti gambar yang diunggah */}
+            <svg
+              viewBox="0 0 36 36"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-xs"
+            >
+              {/* Gelembung chat putih dengan ekor di kanan bawah */}
+              <path
+                d="M7 6C5.34315 6 4 7.34315 4 9V20C4 21.6569 5.34315 23 7 23H22.5L27 27V9C27 7.34315 25.6569 6 24 6H7Z"
+                fill="white"
+              />
+              {/* Handle tas U shape berwarna hijau senada */}
+              <path
+                d="M12.5 10.5V13C12.5 14.933 14.067 16.5 16 16.5C17.933 16.5 19.5 14.933 19.5 13V10.5"
+                stroke="#1B6B38"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          {/* 2. Ikon 'X' (Tampil saat chat terbuka dengan animasi putar balik) */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out transform ${
+              isOpen
+                ? 'rotate-0 scale-100 opacity-100'
+                : '-rotate-90 scale-0 opacity-0 pointer-events-none'
+            }`}
+          >
+            <X className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2.8]" />
+          </div>
+        </button>
+      </div>
     </>
   );
 }
