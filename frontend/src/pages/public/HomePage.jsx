@@ -5,6 +5,7 @@ import ProductCard from '../../components/catalog/ProductCard';
 import FilterSheet from '../../components/catalog/FilterSheet';
 import { ProductCardSkeleton } from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
+import AnimatedHeading from '../../components/ui/AnimatedHeading';
 import { getProducts, getCategories, getMotorTypes } from '../../api/endpoints';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useMotor } from '../../context/MotorContext';
@@ -118,21 +119,23 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      {/* Eyebrow & Judul Hero */}
-      <div className="mb-6">
+      {/* Eyebrow & Judul Hero (Section Katalog) */}
+      <div id="katalog" className="scroll-mt-24 mb-6">
         <div className="text-xs font-display uppercase tracking-[0.2em] font-bold text-brand mb-1">
           KATALOG PART
         </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold uppercase font-display text-ink tracking-tight">
-          CARI PART YANG TEPAT
-        </h1>
+        <AnimatedHeading
+          as="h1"
+          className="text-3xl sm:text-5xl font-extrabold uppercase font-display text-ink tracking-tight"
+          text="CARI PART YANG TEPAT"
+        />
         <p className="text-xs sm:text-sm text-muted-text mt-1">
           Gunakan kode produk saat menghubungi kami agar tidak tertukar.
         </p>
       </div>
 
       {/* ─── AI ASSISTANT SHOWCASE BANNER ─── */}
-      <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-ink via-[#1c1d22] to-ink text-white rounded-sm border border-neutral-800 shadow-md relative overflow-hidden">
+      <div id="ai-konsultan" className="scroll-mt-24 mb-6 p-4 sm:p-5 bg-gradient-to-r from-ink via-[#1c1d22] to-ink text-white rounded-sm border border-neutral-800 shadow-md relative overflow-hidden">
         {/* Glow effect */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-brand/15 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -142,9 +145,11 @@ export default function HomePage() {
               <Sparkles className="w-3.5 h-3.5 animate-spin text-brand" />
               <span>Ditenagai AI Google Gemini 1.5 Flash</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-display font-extrabold uppercase text-white tracking-wide">
-              Tanya Mas Wahyu AI — Konsultan Suku Cadang & Mesin Ninja 2-Tak
-            </h2>
+            <AnimatedHeading
+              as="h2"
+              className="text-xl sm:text-2xl font-display font-extrabold uppercase text-white tracking-wide"
+              text="Tanya Mas Wahyu AI — Konsultan Suku Cadang & Mesin Ninja 2-Tak"
+            />
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
               Bingung kecocokan part, cara rawat Super KIPS, atau setelan karbu? Asisten AI kami dilatih khusus dengan pengetahuan mendalam mekanik Ninja 150 (R, RR, SS) dan data stok live toko.
             </p>
@@ -282,11 +287,12 @@ export default function HomePage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {products.map((product) => (
+            {products.map((product, idx) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 myMotorSlug={selectedMotor?.slug}
+                index={idx}
               />
             ))}
           </div>

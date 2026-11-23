@@ -8,21 +8,24 @@ import { MotorProvider } from './context/MotorContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { CustomerAuthProvider } from './context/CustomerAuthContext';
+import { SmoothScrollProvider } from './context/SmoothScrollContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ToastProvider>
-        <MotorProvider>
-          <CartProvider>
-            <AuthProvider>
-              <CustomerAuthProvider>
-                <App />
-              </CustomerAuthProvider>
-            </AuthProvider>
-          </CartProvider>
-        </MotorProvider>
-      </ToastProvider>
+      <SmoothScrollProvider>
+        <ToastProvider>
+          <MotorProvider>
+            <CartProvider>
+              <AuthProvider>
+                <CustomerAuthProvider>
+                  <App />
+                </CustomerAuthProvider>
+              </AuthProvider>
+            </CartProvider>
+          </MotorProvider>
+        </ToastProvider>
+      </SmoothScrollProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

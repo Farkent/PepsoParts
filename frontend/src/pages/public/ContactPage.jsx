@@ -3,6 +3,7 @@ import { Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 import { getPublicSettings } from '../../api/endpoints';
 import { buildWhatsAppUrl } from '../../utils/format';
 import Button from '../../components/ui/Button';
+import AnimatedHeading from '../../components/ui/AnimatedHeading';
 
 export default function ContactPage() {
   const [settings, setSettings] = useState({});
@@ -19,9 +20,13 @@ export default function ContactPage() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+    <div id="kontak" className="scroll-mt-24 max-w-3xl mx-auto px-4 sm:px-6 py-10">
       <div className="text-xs font-display uppercase tracking-widest font-bold text-brand mb-1">HUBUNGI KAMI</div>
-      <h1 className="text-3xl sm:text-4xl font-display font-extrabold uppercase text-ink mb-6">Kontak & Lokasi</h1>
+      <AnimatedHeading
+        as="h1"
+        className="text-3xl sm:text-4xl font-display font-extrabold uppercase text-ink mb-6"
+        text="Kontak & Lokasi"
+      />
 
       <div className="space-y-4 mb-8">
         {settings.whatsapp_number && (

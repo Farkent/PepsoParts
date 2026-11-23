@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Shield, Bike, UserRound } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useCart } from '../context/CartContext';
@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import FloatingChat from '../components/chat/FloatingChat';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { useAuth } from '../context/AuthContext';
+import { useSmoothScroll } from '../context/SmoothScrollContext';
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,6 +18,21 @@ export default function PublicLayout() {
   const { admin } = useAuth();
   const { selectedMotor, motorTypes, selectMotor } = useMotor();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { scrollTo } = useSmoothScroll();
+
+  const handleQuickScroll = (e, targetId, fallbackPath = null) => {
+    e.preventDefault();
+    const element = document.querySelector(targetId);
+    if (element) {
+      scrollTo(targetId, { offset: -80, duration: 1.2 });
+    } else if (fallbackPath) {
+      navigate(fallbackPath);
+      setTimeout(() => {
+        scrollTo(targetId, { offset: -80, duration: 1.2 });
+      }, 150);
+    }
+  };
 
   const navLinks = [
     { label: 'Katalog', path: '/' },
@@ -205,13 +221,50 @@ export default function PublicLayout() {
             <div>
               <h4 className="font-display uppercase tracking-wider font-bold text-white mb-3">Tautan Cepat</h4>
               <ul className="space-y-2 text-xs">
-                <li><Link to="/" className="hover:text-brand">Katalog Sparepart</Link></li>
-                <li><Link to="/tentang" className="hover:text-brand">Tentang PEPSO PARTS</Link></li>
-                <li><Link to="/kontak" className="hover:text-brand">Hubungi Kami & Lokasi</Link></li>
-                <li><Link to={admin ? "/admin" : customer ? "/akun" : "/login"} className="hover:text-brand">{admin ? "Dashboard Admin" : customer ? "Akun Saya" : "Masuk Akun"}</Link></li>
+                <li>
+                  <a
+                    href="#katalog"
+                    onClick={(e) => handleQuickScroll(e, '#katalog', '/')}
+                    className="hover:text-brand transition-colors cursor-pointer"
+                  >
+                    Katalog Sparepart
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#ai-konsultan"
+                    onClick={(e) => handleQuickScroll(e, '#ai-konsultan', '/')}
+                    className="hover:text-brand transition-colors cursor-pointer"
+                  >
+                    Konsultasi AI (Mas Wahyu)
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#tentang"
+                    onClick={(e) => handleQuickScroll(e, '#tentang', '/tentang')}
+                    className="hover:text-brand transition-colors cursor-pointer"
+                  >
+                    Tentang PEPSO PARTS
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#kontak"
+                    onClick={(e) => handleQuickScroll(e, '#kontak', '/kontak')}
+                    className="hover:text-brand transition-colors cursor-pointer"
+                  >
+                    Hubungi Kami & Lokasi
+                  </a>
+                </li>
+                <li>
+                  <Link to={admin ? "/admin" : customer ? "/akun" : "/login"} className="hover:text-brand">
+                    {admin ? "Dashboard Admin" : customer ? "Akun Saya" : "Masuk Akun"}
+                  </Link>
+                </li>
               </ul>
             </div>
-            <div>
+            <div id="bantuan" className="scroll-mt-24">
               <h4 className="font-display uppercase tracking-wider font-bold text-white mb-3">Pemesanan & Bantuan</h4>
               <p className="text-xs text-neutral-400 leading-relaxed mb-2">
                 Punya pertanyaan ketersediaan atau kecocokan part? Gunakan fitur chat asisten atau hubungi langsung via WhatsApp.

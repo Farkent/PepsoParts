@@ -1,18 +1,76 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Share2, MessageCircle } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Badge, { StatusBadge, GradeBadge } from '../ui/Badge';
 import Button from '../ui/Button';
 import { formatRupiah } from '../../utils/format';
 import { useCart } from '../../context/CartContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 
-export default function ProductCard({ product, myMotorSlug }) {
+gsap.registerPlugin(ScrollTrigger);
+
+export default function ProductCard({ product, myMotorSlug, index = 0 }) {
+  const cardRef = useRef(null);
   const { addItem } = useCart();
   const { customer } = useCustomerAuth();
   const navigate = useNavigate();
   const hasVariants = (product.variant_count || 0) > 0;
   const isAvailable = product.status === 'available' && product.stock > 0;
+
+  // 1. Animasi Masuk (Fade-up + Stagger dengan ScrollTrigger)
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cardRef.current,
+        {
+          y: 35,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.55,
+          delay: Math.min((index % 4) * 0.08, 0.24),
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: cardRef.current,
+            start: 'top 93%',
+            once: true,
+          },
+        }
+      );
+    }, cardRef);
+
+    return () => ctx.revert();
+  }, [index]);
+
+  // 2. Micro-interaction saat card di-hover (terangkat halus & scale halus)
+  const handleMouseEnter = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      y: -6,
+      scale: 1.015,
+      duration: 0.3,
+      ease: 'power2.out',
+      boxShadow: '0 16px 28px -6px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06)',
+      overwrite: 'auto',
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      y: 0,
+      scale: 1,
+      duration: 0.35,
+      ease: 'power2.out',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+      overwrite: 'auto',
+    });
+  };
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -40,8 +98,11 @@ export default function ProductCard({ product, myMotorSlug }) {
 
   return (
     <Link
+      ref={cardRef}
       to={`/produk/${product.slug}`}
-      className={`group relative flex flex-col bg-white border hover:border-brand transition-colors duration-150 overflow-hidden rounded-sm ${motorCompatClass || 'border-neutral-200'}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`group relative flex flex-col bg-white border hover:border-brand transition-colors duration-150 overflow-hidden rounded-sm will-change-transform ${motorCompatClass || 'border-neutral-200'}`}
     >
       {/* Gambar Produk */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted-bg">

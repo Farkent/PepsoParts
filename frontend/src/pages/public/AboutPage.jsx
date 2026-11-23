@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Clock, ExternalLink, Facebook, ShoppingBag } from 'lucide-react';
 import { getPublicSettings } from '../../api/endpoints';
 import { buildWhatsAppUrl } from '../../utils/format';
+import AnimatedHeading from '../../components/ui/AnimatedHeading';
 
 export default function AboutPage() {
   const [settings, setSettings] = useState({});
@@ -17,11 +18,13 @@ export default function AboutPage() {
   const waUrl = buildWhatsAppUrl(settings.whatsapp_number || '', 'Halo PEPSO PARTS, saya ingin bertanya...');
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+    <div id="tentang" className="scroll-mt-24 max-w-3xl mx-auto px-4 sm:px-6 py-10">
       <div className="text-xs font-display uppercase tracking-widest font-bold text-brand mb-1">TENTANG KAMI</div>
-      <h1 className="text-3xl sm:text-4xl font-display font-extrabold uppercase text-ink mb-6">
-        {settings.store_name || 'PEPSO PARTS'}
-      </h1>
+      <AnimatedHeading
+        as="h1"
+        className="text-3xl sm:text-4xl font-display font-extrabold uppercase text-ink mb-6"
+        text={settings.store_name || 'PEPSO PARTS'}
+      />
 
       {settings.about_text && (
         <p className="text-base text-neutral-700 leading-relaxed mb-8 whitespace-pre-line">
