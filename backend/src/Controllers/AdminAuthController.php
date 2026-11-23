@@ -30,7 +30,7 @@ class AdminAuthController
         }
 
         $db = Database::getConnection();
-        $stmt = $db->prepare('SELECT id, name, email, password_hash FROM admins WHERE email = :email LIMIT 1');
+        $stmt = $db->prepare('SELECT id, name, email, password_hash, deleted_at FROM admins WHERE email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
         $admin = $stmt->fetch();
 
@@ -38,6 +38,10 @@ class AdminAuthController
             // Beri sedikit delay untuk memperlambat brute-force
             usleep(200000); // 200ms
             Response::error('Email atau kata sandi tidak cocok.', 'INVALID_CREDENTIALS', 401);
+        }
+
+        if (!empty($admin['deleted_at'])) {
+            Response::error('Akun admin ini telah dinonaktifkan atau dihapus.', 'ACCOUNT_DELETED', 403);
         }
 
         // Login Berhasil: Regenerate ID sesi & simpan admin_id

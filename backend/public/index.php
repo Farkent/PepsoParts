@@ -28,6 +28,7 @@ use Pepso\Controllers\AdminMasterController;
 use Pepso\Controllers\AdminSettingsController;
 use Pepso\Controllers\AdminOrderController;
 use Pepso\Controllers\AdminReportController;
+use Pepso\Controllers\AdminUserController;
 use Pepso\Controllers\CustomerAuthController;
 use Pepso\Controllers\AuthController;
 
@@ -67,6 +68,8 @@ $router->post('/api/customer/register', [CustomerAuthController::class, 'registe
 $router->post('/api/customer/login', [CustomerAuthController::class, 'login']);
 $router->get('/api/customer/me', [CustomerAuthController::class, 'me']);
 $router->post('/api/customer/logout', [CustomerAuthController::class, 'logout'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
+$router->post('/api/customer/delete-account', [CustomerAuthController::class, 'deleteAccount'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
+$router->delete('/api/customer/me', [CustomerAuthController::class, 'deleteAccount'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
 $router->get('/api/customer/orders', [CustomerAuthController::class, 'orders'], [CustomerAuthMiddleware::class]);
 $router->patch('/api/customer/orders/{code}/received', [CustomerAuthController::class, 'confirmOrderReceived'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
 
@@ -102,6 +105,13 @@ $router->patch('/api/admin/orders/{id}/note', [AdminOrderController::class, 'upd
 
 $router->get('/api/admin/reports/stock', [AdminReportController::class, 'stockReport'], [AuthMiddleware::class]);
 $router->get('/api/admin/reports/orders', [AdminReportController::class, 'salesReport'], [AuthMiddleware::class]);
+
+// ─────────────────────────────────────────────────────────────
+// RUTE ADMIN - KELOLA PENGGUNA (PELANGGAN & ADMIN)
+// ─────────────────────────────────────────────────────────────
+$router->get('/api/admin/users', [AdminUserController::class, 'index'], [AuthMiddleware::class]);
+$router->delete('/api/admin/users/{id}', [AdminUserController::class, 'delete'], [AuthMiddleware::class, CsrfMiddleware::class]);
+$router->patch('/api/admin/users/{id}/restore', [AdminUserController::class, 'restore'], [AuthMiddleware::class, CsrfMiddleware::class]);
 
 // ─────────────────────────────────────────────────────────────
 // RUTE ADMIN - KELOLA PRODUK & FOTO

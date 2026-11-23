@@ -28,6 +28,7 @@ const OrdersPage        = lazy(() => import('./pages/admin/OrdersPage'));
 const OrderDetailPage   = lazy(() => import('./pages/admin/OrderDetailPage'));
 const ReportsPage       = lazy(() => import('./pages/admin/ReportsPage'));
 const SettingsPage      = lazy(() => import('./pages/admin/SettingsPage'));
+const UsersPage         = lazy(() => import('./pages/admin/UsersPage'));
 
 function PageLoader() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="tipe-motor" element={<MotorTypesPage />} />
           <Route path="pesanan" element={<OrdersPage />} />
           <Route path="pesanan/:id" element={<OrderDetailPage />} />
+          <Route path="pengguna" element={<UsersPage />} />
           <Route path="laporan" element={<ReportsPage />} />
           <Route path="pengaturan" element={<SettingsPage />} />
         </Route>

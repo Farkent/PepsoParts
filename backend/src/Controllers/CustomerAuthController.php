@@ -95,13 +95,17 @@ class CustomerAuthController
         }
 
         $db = Database::getConnection();
-        $stmt = $db->prepare('SELECT id, name, email, whatsapp, password_hash FROM customers WHERE email = :email LIMIT 1');
+        $stmt = $db->prepare('SELECT id, name, email, whatsapp, password_hash, deleted_at FROM customers WHERE email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
         $record = $stmt->fetch();
 
         if (!$record || !password_verify($password, $record['password_hash'])) {
             usleep(200000);
             Response::error('Email atau kata sandi tidak cocok.', 'INVALID_CREDENTIALS', 401);
+        }
+
+        if (!empty($record['deleted_at'])) {
+            Response::error('Akun pelanggan ini telah dinonaktifkan atau dihapus.', 'ACCOUNT_DELETED', 403);
         }
 
         $db->prepare('UPDATE customers SET last_login_at = NOW() WHERE id = :id')
@@ -186,6 +190,65 @@ class CustomerAuthController
         } catch (\RuntimeException $e) {
             Response::error($e->getMessage(), 'INVALID_ORDER_STATUS', 422);
         }
+    }
+
+    public function deleteAccount(Request $request): void
+    {
+        Session::start();
+        $customerId = (int)Session::get('customer_id', 0);
+        if (!$customerId) {
+            Response::error('Silakan masuk ke akun pelanggan untuk melanjutkan.', 'UNAUTHORIZED', 401);
+        }
+
+        $body = $request->getBody();
+        $password = (string)($body['password'] ?? '');
+        $confirmation = trim((string)($body['confirmation'] ?? ''));
+
+        if ($password === '') {
+            Response::error('Konfirmasi kata sandi saat ini wajib diisi.', 'VALIDATION_ERROR', 422, [
+                'password' => 'Kata sandi saat ini wajib diisi.',
+            ]);
+        }
+
+        if ($confirmation !== 'HAPUS AKUN') {
+            Response::error('Silakan ketik "HAPUS AKUN" dengan huruf kapital untuk mengonfirmasi penghapusan akun.', 'VALIDATION_ERROR', 422, [
+                'confirmation' => 'Teks konfirmasi harus persis "HAPUS AKUN".',
+            ]);
+        }
+
+        $db = Database::getConnection();
+        $stmt = $db->prepare('SELECT id, name, email, password_hash, deleted_at FROM customers WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $customerId]);
+        $customer = $stmt->fetch();
+
+        if (!$customer) {
+            Response::error('Akun pelanggan tidak ditemukan.', 'USER_NOT_FOUND', 404);
+        }
+
+        if (!empty($customer['deleted_at'])) {
+            Response::error('Akun ini sudah dalam status terhapus.', 'ALREADY_DELETED', 400);
+        }
+
+        // Verifikasi kata sandi saat ini
+        if (!password_verify($password, $customer['password_hash'])) {
+            usleep(150000);
+            Response::error('Kata sandi yang Anda masukkan salah. Penghapusan akun dibatalkan.', 'INVALID_PASSWORD', 400);
+        }
+
+        // Jalankan Soft Delete:
+        // Memberi timestamp deleted_at. Riwayat pesanan tetap utuh di database sehingga laporan keuangan toko tidak rusak.
+        $updateStmt = $db->prepare('UPDATE customers SET deleted_at = NOW(), updated_at = NOW() WHERE id = :id');
+        $updateStmt->execute(['id' => $customerId]);
+
+        // Hapus sesi secara menyeluruh
+        Session::remove('customer_id');
+        Session::remove('customer_name');
+        Session::remove('customer_email');
+        Session::destroy();
+
+        Response::json([
+            'message' => 'Akun Anda berhasil dihapus. Semua sesi telah diakhiri.',
+        ]);
     }
 
     private function startCustomerSession(array $customer): void

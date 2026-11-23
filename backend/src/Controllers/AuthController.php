@@ -37,11 +37,15 @@ class AuthController
         $db = Database::getConnection();
 
         // 1. Cek tabel admins terlebih dahulu
-        $stmtAdmin = $db->prepare('SELECT id, name, email, password_hash FROM admins WHERE LOWER(email) = :email LIMIT 1');
+        $stmtAdmin = $db->prepare('SELECT id, name, email, password_hash, deleted_at FROM admins WHERE LOWER(email) = :email LIMIT 1');
         $stmtAdmin->execute(['email' => $email]);
         $admin = $stmtAdmin->fetch();
 
         if ($admin && password_verify($password, $admin['password_hash'])) {
+            if (!empty($admin['deleted_at'])) {
+                Response::error('Akun admin ini telah dinonaktifkan atau dihapus.', 'ACCOUNT_DELETED', 403);
+            }
+
             Session::start();
             Session::regenerate();
             Session::set('admin_id', (int)$admin['id']);
@@ -64,11 +68,15 @@ class AuthController
         }
 
         // 2. Cek tabel customers
-        $stmtCustomer = $db->prepare('SELECT id, name, email, whatsapp, password_hash FROM customers WHERE LOWER(email) = :email LIMIT 1');
+        $stmtCustomer = $db->prepare('SELECT id, name, email, whatsapp, password_hash, deleted_at FROM customers WHERE LOWER(email) = :email LIMIT 1');
         $stmtCustomer->execute(['email' => $email]);
         $customer = $stmtCustomer->fetch();
 
         if ($customer && password_verify($password, $customer['password_hash'])) {
+            if (!empty($customer['deleted_at'])) {
+                Response::error('Akun pelanggan ini telah dinonaktifkan atau dihapus.', 'ACCOUNT_DELETED', 403);
+            }
+
             Session::start();
             Session::regenerate();
             Session::set('customer_id', (int)$customer['id']);

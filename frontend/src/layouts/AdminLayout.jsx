@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   UserCheck,
+  Users,
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +84,7 @@ export default function AdminLayout() {
     { label: 'Kategori', path: '/admin/kategori', icon: FolderTree },
     { label: 'Tipe Motor', path: '/admin/tipe-motor', icon: Bike },
     { label: 'Pesanan', path: '/admin/pesanan', icon: ShoppingCart, badge: orderNotificationCount > 0 ? orderNotificationCount : null },
+    { label: 'Kelola Pengguna', path: '/admin/pengguna', icon: Users },
     { label: 'Laporan', path: '/admin/laporan', icon: FileBarChart },
     { label: 'Pengaturan', path: '/admin/pengaturan', icon: Settings },
   ];

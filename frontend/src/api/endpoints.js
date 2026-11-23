@@ -37,6 +37,7 @@ export const customerRegister = (data) => api.post('/customer/register', data);
 export const customerLogin = (data) => api.post('/customer/login', data);
 export const customerLogout = () => api.post('/customer/logout');
 export const customerMe = () => api.get('/customer/me');
+export const customerDeleteAccount = (data) => api.post('/customer/delete-account', data);
 export const customerGetOrders = () => api.get('/customer/orders');
 export const customerConfirmOrderReceived = (code) => api.patch(`/customer/orders/${encodeURIComponent(code)}/received`);
 
@@ -99,6 +100,16 @@ export const adminGetOrderReport   = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return api.get('/admin/reports/orders' + (qs ? '?' + qs : ''));
 };
+
+// ── Admin Kelola Pengguna ─────────────────────────────────────
+export const adminGetUsers = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return api.get('/admin/users' + (qs ? '?' + qs : ''));
+};
+export const adminDeleteUser = (id, type = 'customer') =>
+  api.delete(`/admin/users/${id}?type=${encodeURIComponent(type)}`);
+export const adminRestoreUser = (id, type = 'customer') =>
+  api.patch(`/admin/users/${id}/restore?type=${encodeURIComponent(type)}`);
 
 export const adminAiDescribeProduct = (data) => api.post('/admin/ai/describe-product', data);
 
