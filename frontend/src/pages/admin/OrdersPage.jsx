@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Eye, Filter, Calendar, RefreshCw } from 'lucide-react';
 import { adminGetOrders } from '../../api/endpoints';
 import { formatRupiah, formatDate } from '../../utils/format';
-import { StatusBadge } from '../../components/ui/Badge';
+import { OrderStatusBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Skeleton from '../../components/ui/Skeleton';
@@ -127,6 +127,7 @@ export default function OrdersPage() {
             <option value="">Semua Status</option>
             <option value="new">Baru (Menunggu)</option>
             <option value="confirmed">Dikonfirmasi</option>
+            <option value="shipped">Dikirim</option>
             <option value="completed">Selesai</option>
             <option value="cancelled">Dibatalkan</option>
           </select>
@@ -220,10 +221,10 @@ export default function OrdersPage() {
                       {formatRupiah(order.total_amount)}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <StatusBadge status={order.status} />
+                      <OrderStatusBadge status={order.status} />
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <Link to={`/admin/pesanan/${order.id}`}>
+                      <Link to={`/admin/pesanan/${encodeURIComponent(order.order_code)}`}>
                         <Button variant="outline" size="xs" icon={Eye}>
                           Detail
                         </Button>

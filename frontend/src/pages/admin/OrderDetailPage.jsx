@@ -14,10 +14,12 @@ import {
 import {
   adminGetOrder,
   adminPatchOrderStatus,
+  adminPatchOrderShipping,
   adminPatchOrderNote,
+  adminAcknowledgeReceivedNotification,
 } from '../../api/endpoints';
 import { formatRupiah, formatDate } from '../../utils/format';
-import { StatusBadge } from '../../components/ui/Badge';
+import { OrderStatusBadge } from '../../components/ui/Badge';
 import { useToast } from '../../context/ToastContext';
 import Button from '../../components/ui/Button';
 import Textarea from '../../components/ui/Textarea';
@@ -31,7 +33,10 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [note, setNote] = useState('');
+  const [courier, setCourier] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [savingShipping, setSavingShipping] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchOrder = async () => {
@@ -42,6 +47,16 @@ export default function OrderDetailPage() {
         const orderData = res?.data?.id ? res.data : (res?.data?.data || res?.data);
         setOrder(orderData);
         setNote(orderData?.admin_note || '');
+        setCourier(orderData?.courier || '');
+        setTrackingNumber(orderData?.tracking_number || '');
+        if (orderData?.status === 'completed') {
+          try {
+            await adminAcknowledgeReceivedNotification(id);
+          } catch (err) {
+            console.error('Acknowledge received-order notification error:', err);
+            toastError('Pemberitahuan penerimaan pesanan belum dapat ditandai sudah dibaca.');
+          }
+        }
       } else {
         toastError('Pesanan tidak ditemukan.');
         navigate('/admin/pesanan');
@@ -51,6 +66,27 @@ export default function OrderDetailPage() {
       toastError('Gagal memuat rincian pesanan.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveShipping = async () => {
+    setSavingShipping(true);
+    try {
+      const res = await adminPatchOrderShipping(id, {
+        courier: courier.trim(),
+        tracking_number: trackingNumber.trim(),
+      });
+      if (res?.success || res?.data?.success) {
+        success('Informasi pengiriman berhasil disimpan.');
+        fetchOrder();
+      } else {
+        toastError(res?.message || res?.data?.message || 'Gagal menyimpan informasi pengiriman.');
+      }
+    } catch (err) {
+      console.error('Save shipping details error:', err);
+      toastError(err.response?.data?.message || 'Gagal menyimpan informasi pengiriman.');
+    } finally {
+      setSavingShipping(false);
     }
   };
 
@@ -77,7 +113,7 @@ export default function OrderDetailPage() {
       }
     } catch (err) {
       console.error('Update status error:', err);
-      toastError(err.response?.data?.message || 'Gagal mengubah status pesanan.');
+      toastError(err.message || 'Gagal mengubah status pesanan.');
     } finally {
       setUpdatingStatus(false);
     }
@@ -154,7 +190,7 @@ export default function OrderDetailPage() {
         {/* Status & Action Buttons */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="mr-2">
-            <StatusBadge status={order.status} />
+            <OrderStatusBadge status={order.status} />
           </div>
 
           {order.status === 'new' && (
@@ -183,25 +219,7 @@ export default function OrderDetailPage() {
 
           {order.status === 'confirmed' && (
             <>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Truck}
-                loading={updatingStatus}
-                onClick={() => handleStatusChange('completed')}
-              >
-                Tandai Selesai
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                icon={XCircle}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange('cancelled')}
-                className="text-red-600 hover:text-red-700 hover:border-red-300"
-              >
-                Batalkan
-              </Button>
+              <span className="text-xs text-muted-text">Isi kurir dan resi untuk menandai dikirim.</span>
             </>
           )}
 
@@ -250,19 +268,60 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
+          {(order.status === 'confirmed' || order.status === 'shipped') && (
+            <div className="bg-white border border-neutral-200 rounded-sm p-5 space-y-3">
+              <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink border-b border-neutral-200 pb-2">
+                Informasi Pengiriman
+              </h3>
+              <label className="block text-xs font-semibold text-neutral-700">
+                Kurir
+                <input
+                  type="text"
+                  maxLength={100}
+                  value={courier}
+                  onChange={(event) => setCourier(event.target.value)}
+                  placeholder="Contoh: J&T Express"
+                  className="mt-1 w-full border border-neutral-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-brand"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-neutral-700">
+                Nomor Resi
+                <input
+                  type="text"
+                  maxLength={100}
+                  value={trackingNumber}
+                  onChange={(event) => setTrackingNumber(event.target.value)}
+                  placeholder="Masukkan nomor resi"
+                  className="mt-1 w-full border border-neutral-300 rounded-sm px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand"
+                />
+              </label>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Truck}
+                loading={savingShipping}
+                disabled={!courier.trim() || !trackingNumber.trim()}
+                onClick={handleSaveShipping}
+                className="w-full justify-center"
+              >
+                {order.status === 'confirmed' ? 'Simpan & Tandai Dikirim' : 'Simpan Perubahan'}
+              </Button>
+            </div>
+          )}
+
           {/* Admin Note Section */}
           <div className="bg-white border border-neutral-200 rounded-sm p-5 space-y-3">
             <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink border-b border-neutral-200 pb-2">
-              Catatan Internal Admin / Resi
+              Catatan Tambahan Admin
             </h3>
             <p className="text-[11px] text-muted-text">
-              Catatan ini dapat dilihat oleh pelanggan di halaman pelacakan pesanan mereka (misal: nomor resi pengiriman J&T).
+              Catatan ini ditampilkan pada halaman lacak pesanan, tetapi tidak mengubah status atau kolom kurir dan resi.
             </p>
             <Textarea
               rows={4}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Contoh: No Resi J&T: JT8891029312. Paket sudah dipacking kayu."
+              placeholder="Contoh: Paket sudah dipacking kayu."
               className="text-xs"
             />
             <Button

@@ -17,7 +17,7 @@ class CsrfMiddleware
         if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             $uri = $request->getUri();
             // Bypass CSRF untuk login awal (karena token diambil setelah login atau saat inisialisasi)
-            if ($uri === '/api/admin/login') {
+            if (in_array($uri, ['/api/admin/login', '/api/customer/login', '/api/customer/register'], true)) {
                 return;
             }
 

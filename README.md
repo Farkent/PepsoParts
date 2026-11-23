@@ -43,6 +43,8 @@ mysql -u root pepso_parts < database/seed_sample.sql
 
 *(Pada PowerShell: `Get-Content database/schema.sql -Raw | mysql -u root pepso_parts`)*
 
+Untuk database yang sudah terpasang, jalankan migrasi `database/migrations/003_customer_accounts.sql` agar akun pelanggan dan relasi pesanan tersedia. Jalankan juga `database/migrations/004_order_shipping_tracking.sql` untuk tahap pengiriman/kurir/resi, lalu `database/migrations/005_customer_received_notification.sql` untuk pemberitahuan admin saat pelanggan mengonfirmasi barang diterima.
+
 ### 2. Konfigurasi Lingkungan (`.env`)
 Salin berkas konfigurasi di backend:
 ```bash
@@ -123,7 +125,7 @@ Panduan lengkap pengunggahan ke shared hosting Apache terdapat di [docs/DEPLOY.m
 
 Seluruh dokumentasi teknis dan operasional tersedia di folder `docs/`:
 - [docs/API.md](docs/API.md) : Spesifikasi lengkap seluruh endpoint REST API (Publik & Admin).
-- [docs/ERD.md](docs/ERD.md) : Diagram Relasi Entitas 12 tabel basis data (Mermaid) dan kamus data.
+- [docs/ERD.md](docs/ERD.md) : Diagram Relasi Entitas 13 tabel basis data (Mermaid) dan kamus data.
 - [docs/DEPLOY.md](docs/DEPLOY.md) : Panduan penerapan di cPanel Shared Hosting, VPS Linux, & XAMPP.
 - [docs/ASUMSI.md](docs/ASUMSI.md) : Asumsi domain bisnis, batasan teknis, dan trade-off arsitektur.
 - [docs/KEAMANAN.md](docs/KEAMANAN.md) : Laporan audit keamanan mitigasi OWASP Top 10 (SQLi, CSRF, XSS, upload security).

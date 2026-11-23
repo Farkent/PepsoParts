@@ -169,6 +169,7 @@ class AdminReportController
         return match ($status) {
             'new'       => 'Baru',
             'confirmed' => 'Dikonfirmasi',
+            'shipped'   => 'Dikirim',
             'completed' => 'Selesai',
             'cancelled' => 'Dibatalkan',
             'available' => 'Tersedia',

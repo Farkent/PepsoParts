@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PublicLayout from './layouts/PublicLayout';
 import HomePage from './pages/public/HomePage';
 import NotFoundPage from './pages/public/NotFoundPage';
@@ -11,10 +11,13 @@ const ContactPage       = lazy(() => import('./pages/public/ContactPage'));
 const CartPage          = lazy(() => import('./pages/public/CartPage'));
 const CheckoutPage      = lazy(() => import('./pages/public/CheckoutPage'));
 const OrderTrackingPage = lazy(() => import('./pages/public/OrderTrackingPage'));
+const CustomerAccountPage = lazy(() => import('./pages/public/CustomerAccountPage'));
+
+// Halaman login terpadu (pelanggan + admin)
+const LoginPage         = lazy(() => import('./pages/LoginPage'));
 
 // Lazy-load rute admin
 const AdminLayout       = lazy(() => import('./layouts/AdminLayout'));
-const LoginPage         = lazy(() => import('./pages/admin/LoginPage'));
 const DashboardPage     = lazy(() => import('./pages/admin/DashboardPage'));
 const ProductsPage      = lazy(() => import('./pages/admin/ProductsPage'));
 const ProductFormPage   = lazy(() => import('./pages/admin/ProductFormPage'));
@@ -49,11 +52,14 @@ export default function App() {
           <Route path="/keranjang" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/pesanan/:code" element={<OrderTrackingPage />} />
+          <Route path="/akun" element={<CustomerAccountPage />} />
           <Route path="*"       element={<NotFoundPage />} />
         </Route>
 
-        {/* ── Login Admin (standalone) ── */}
-        <Route path="/admin/login" element={<LoginPage />} />
+        {/* ── Halaman Login Terpadu ── */}
+        <Route path="/login" element={<LoginPage />} />
+        {/* Redirect lama /admin/login ke halaman login terpadu tab admin */}
+        <Route path="/admin/login" element={<Navigate to="/login?tab=admin" replace />} />
 
         {/* ── Rute Admin (dilindungi AdminLayout) ── */}
         <Route path="/admin" element={<AdminLayout />}>

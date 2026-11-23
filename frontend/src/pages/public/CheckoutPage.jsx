@@ -8,9 +8,11 @@ import { formatRupiah } from '../../utils/format';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 
 export default function CheckoutPage() {
   const { items, totalPrice, totalItems, clearCart } = useCart();
+  const { customer, loading: customerLoading } = useCustomerAuth();
   const { success, error: toastError } = useToast();
   const navigate = useNavigate();
 
@@ -26,6 +28,21 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [validating, setValidating] = useState(false);
   const [stockIssues, setStockIssues] = useState([]);
+
+  useEffect(() => {
+    if (!customerLoading && !customer) {
+      navigate('/akun', { replace: true, state: { from: '/checkout' } });
+    }
+  }, [customer, customerLoading, navigate]);
+
+  useEffect(() => {
+    if (!customer) return;
+    setFormData((current) => ({
+      ...current,
+      customer_name: current.customer_name || customer.name || '',
+      customer_whatsapp: current.customer_whatsapp || customer.whatsapp || '',
+    }));
+  }, [customer]);
 
   // Check cart stock availability on load
   useEffect(() => {
@@ -59,6 +76,10 @@ export default function CheckoutPage() {
       isMounted = false;
     };
   }, [items]);
+
+  if (customerLoading || !customer) {
+    return <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-text">Memeriksa akun pelanggan...</div>;
+  }
 
   if (items.length === 0) {
     return (
@@ -142,10 +163,10 @@ export default function CheckoutPage() {
       }
     } catch (err) {
       console.error('Order creation error:', err);
-      const msg = err.response?.data?.message || 'Terjadi kesalahan saat memproses pesanan.';
+      const msg = err.message || 'Terjadi kesalahan saat memproses pesanan.';
       toastError(msg);
-      if (err.response?.data?.errors) {
-        setFieldErrors(err.response.data.errors);
+      if (err.fields) {
+        setFieldErrors(err.fields);
       }
     } finally {
       setSubmitting(false);

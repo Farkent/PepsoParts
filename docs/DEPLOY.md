@@ -52,7 +52,7 @@ Struktur penempatan file yang direkomendasikan pada server:
 2. Buat database baru (misal: `user_pepso_parts`).
 3. Buat pengguna database dan berikan **ALL PRIVILEGES**.
 4. Buka **phpMyAdmin**, pilih database tersebut, lalu impor berkas:
-   - `database/schema.sql` (struktur 12 tabel)
+   - `database/schema.sql` (struktur 13 tabel, termasuk akun pelanggan)
    - `database/seed_sample.sql` (opsional: data awal 14 part Ninja 2T).
 
 ### Langkah 2: Build Frontend

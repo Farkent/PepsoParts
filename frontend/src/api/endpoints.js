@@ -29,6 +29,14 @@ export const validateCart = (items) => api.post('/cart/validate', { items });
 export const createOrder   = (data) => api.post('/orders', data);
 export const getOrderByCode = (code, token) => api.get(`/orders/${code}?token=${encodeURIComponent(token)}`);
 
+// ── Akun pelanggan ────────────────────────────────────────────
+export const customerRegister = (data) => api.post('/customer/register', data);
+export const customerLogin = (data) => api.post('/customer/login', data);
+export const customerLogout = () => api.post('/customer/logout');
+export const customerMe = () => api.get('/customer/me');
+export const customerGetOrders = () => api.get('/customer/orders');
+export const customerConfirmOrderReceived = (code) => api.patch(`/customer/orders/${encodeURIComponent(code)}/received`);
+
 // ── AI ────────────────────────────────────────────────────────
 export const aiChat          = (data) => api.post('/ai/chat', data);
 export const aiSearch        = (data) => api.post('/ai/search', data);
@@ -63,7 +71,10 @@ export const adminGetOrders     = (params = {}) => {
 };
 export const adminGetOrder     = (id) => api.get(`/admin/orders/${id}`);
 export const adminCountNewOrders = () => api.get('/admin/orders/count-new');
+export const adminGetOrderNotifications = () => api.get('/admin/orders/count-notifications');
 export const adminPatchOrderStatus = (id, status) => api.patch(`/admin/orders/${id}/status`, { status });
+export const adminPatchOrderShipping = (id, data) => api.patch(`/admin/orders/${id}/shipping`, data);
+export const adminAcknowledgeReceivedNotification = (id) => api.patch(`/admin/orders/${id}/received-notification`);
 export const adminPatchOrderNote   = (id, note) => api.patch(`/admin/orders/${id}/note`, { note });
 
 export const adminGetCategories     = () => api.get('/admin/categories');

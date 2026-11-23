@@ -17,6 +17,11 @@ class AdminOrderController
         $this->orders = new OrderRepository();
     }
 
+    private function orderIdentifier(array $params): string
+    {
+        return (string)($params['id'] ?? '');
+    }
+
     // ─── GET /api/admin/orders ────────────────────────────────────────────────
 
     public function index(Request $req, Response $res): void
@@ -47,8 +52,10 @@ class AdminOrderController
 
     public function show(Request $req, Response $res, array $params): void
     {
-        $id    = (int)($params['id'] ?? 0);
-        $order = $this->orders->findById($id, withItems: true);
+        $identifier = (string)($params['id'] ?? '');
+        $order = ctype_digit($identifier)
+            ? $this->orders->findById((int)$identifier, withItems: true)
+            : $this->orders->findAdminByCode($identifier);
 
         if (!$order) {
             $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
@@ -62,11 +69,16 @@ class AdminOrderController
 
     public function updateStatus(Request $req, Response $res, array $params): void
     {
-        $id     = (int)($params['id'] ?? 0);
+        $identifier = $this->orderIdentifier($params);
         $body   = $req->getBody();
         $status = trim($body['status'] ?? '');
 
-        $allowed = ['confirmed', 'completed', 'cancelled'];
+        if ($identifier === '') {
+            $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return;
+        }
+
+        $allowed = ['confirmed', 'cancelled'];
         if (!in_array($status, $allowed, true)) {
             $res->json([
                 'success' => false,
@@ -76,7 +88,9 @@ class AdminOrderController
         }
 
         try {
-            $ok = $this->orders->updateStatus($id, $status);
+            $ok = ctype_digit($identifier)
+                ? $this->orders->updateStatus((int)$identifier, $status)
+                : $this->orders->updateStatusByCode($identifier, $status);
             if (!$ok) {
                 $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
                 return;
@@ -87,15 +101,59 @@ class AdminOrderController
         }
     }
 
+    // ─── PATCH /api/admin/orders/{id}/shipping ──────────────────────────────
+
+    public function updateShipping(Request $req, Response $res, array $params): void
+    {
+        $identifier = $this->orderIdentifier($params);
+        $body = $req->getBody();
+        $courier = trim((string)($body['courier'] ?? ''));
+        $trackingNumber = trim((string)($body['tracking_number'] ?? ''));
+
+        if ($identifier === '') {
+            $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return;
+        }
+
+        if ($courier === '' || mb_strlen($courier) > 100 ||
+            $trackingNumber === '' || mb_strlen($trackingNumber) > 100) {
+            $res->json([
+                'success' => false,
+                'message' => 'Nama kurir dan nomor resi wajib diisi (maksimal 100 karakter).',
+            ], 422);
+            return;
+        }
+
+        try {
+            $ok = ctype_digit($identifier)
+                ? $this->orders->updateShipping((int)$identifier, $courier, $trackingNumber)
+                : $this->orders->updateShippingByCode($identifier, $courier, $trackingNumber);
+            if (!$ok) {
+                $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+                return;
+            }
+            $res->json(['success' => true, 'message' => 'Informasi pengiriman disimpan.']);
+        } catch (\RuntimeException $e) {
+            $res->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
     // ─── PATCH /api/admin/orders/{id}/note ───────────────────────────────────
 
     public function updateNote(Request $req, Response $res, array $params): void
     {
-        $id   = (int)($params['id'] ?? 0);
+        $identifier = $this->orderIdentifier($params);
         $body = $req->getBody();
         $note = trim($body['note'] ?? '');
 
-        $ok = $this->orders->updateNote($id, $note);
+        if ($identifier === '') {
+            $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return;
+        }
+
+        $ok = ctype_digit($identifier)
+            ? $this->orders->updateNote((int)$identifier, $note)
+            : $this->orders->updateNoteByCode($identifier, $note);
 
         if (!$ok) {
             $res->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
@@ -111,6 +169,32 @@ class AdminOrderController
     {
         $count = $this->orders->countNew();
         $res->json(['success' => true, 'data' => ['count' => $count], 'count' => $count]);
+    }
+
+    public function countNotifications(Request $req, Response $res): void
+    {
+        $counts = $this->orders->countAdminNotifications();
+        $res->json($counts);
+    }
+
+    public function acknowledgeReceivedNotification(Request $req, Response $res, array $params): void
+    {
+        $identifier = $this->orderIdentifier($params);
+        if ($identifier === '') {
+            $res->json(['success' => false, 'message' => 'Pesanan selesai tidak ditemukan.'], 404);
+            return;
+        }
+
+        $ok = ctype_digit($identifier)
+            ? $this->orders->acknowledgeReceivedNotification((int)$identifier)
+            : $this->orders->acknowledgeReceivedNotificationByCode($identifier);
+
+        if (!$ok) {
+            $res->json(['success' => false, 'message' => 'Pesanan selesai tidak ditemukan.'], 404);
+            return;
+        }
+
+        $res->json(['success' => true, 'message' => 'Pemberitahuan pesanan diterima telah ditinjau.']);
     }
 }
 

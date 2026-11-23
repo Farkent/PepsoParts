@@ -6,6 +6,7 @@ namespace Pepso\Controllers;
 
 use Pepso\Core\Request;
 use Pepso\Core\Response;
+use Pepso\Core\Session;
 use Pepso\Repositories\OrderRepository;
 use Pepso\Repositories\SettingsRepository;
 
@@ -168,6 +169,7 @@ class OrderController
 
         try {
             $result = $this->orders->createOrder([
+                'customer_id'        => (int)Session::get('customer_id'),
                 'customer_name'      => $name,
                 'customer_whatsapp'  => $wa,
                 'customer_address'   => $addr,

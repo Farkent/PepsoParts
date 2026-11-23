@@ -127,14 +127,19 @@ if ($sampleProduct) {
     $created = $orderRepo->createOrder($orderData);
     assertTest('Order created with PO- prefix', str_starts_with($created['code'], 'PO-'), "Code: {$created['code']}");
     assertTest('Order has secure public tracking token', !empty($created['public_token']) && strlen($created['public_token']) === 64);
-
+    $foundByCode = $orderRepo->findAdminByCode($created['order_code']);
+    assertTest(
+        'Admin order detail resolves the selected order code',
+        (int)($foundByCode['id'] ?? 0) === (int)$created['id'],
+        "Code: {$created['order_code']}"
+    );
     // Verify stock deducted
     $postStock = (int)$db->query("SELECT stock FROM products WHERE id = {$sampleProduct['id']}")->fetchColumn();
     assertTest('Stock atomically deducted by 2', $postStock === $initialStock - 2, "Was: {$initialStock}, Now: {$postStock}");
 
     // Test order status machine: new -> confirmed
-    $confirmResult = $orderRepo->updateStatus((int)$created['id'], 'confirmed');
-    assertTest('Order status transition: new -> confirmed', $confirmResult);
+    $confirmResult = $orderRepo->updateStatusByCode($created['order_code'], 'confirmed');
+    assertTest('Order status transition by code: new -> confirmed', $confirmResult);
 
     // Cancel order from confirmed -> stock should be restored!
     $cancelResult = $orderRepo->updateStatus((int)$created['id'], 'cancelled');

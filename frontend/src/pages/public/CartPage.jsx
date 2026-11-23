@@ -2,11 +2,13 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { useCart, itemKey } from '../../context/CartContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { formatRupiah } from '../../utils/format';
 import Button from '../../components/ui/Button';
 
 export default function CartPage() {
   const { items, updateQty, removeItem, clearCart, totalPrice, totalItems } = useCart();
+  const { customer } = useCustomerAuth();
   const navigate = useNavigate();
 
   if (items.length === 0) {
@@ -187,7 +189,7 @@ export default function CartPage() {
               size="lg"
               className="w-full justify-center"
               icon={ArrowRight}
-              onClick={() => navigate('/checkout')}
+              onClick={() => navigate(customer ? '/checkout' : '/akun', customer ? undefined : { state: { from: '/checkout' } })}
             >
               Lanjut ke Pembayaran
             </Button>

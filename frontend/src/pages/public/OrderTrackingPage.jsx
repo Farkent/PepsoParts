@@ -11,24 +11,30 @@ import {
   Check,
   MapPin,
   FileText,
+  Truck,
 } from 'lucide-react';
-import { getOrderByCode, getPublicSettings } from '../../api/endpoints';
+import { customerConfirmOrderReceived, getOrderByCode, getPublicSettings } from '../../api/endpoints';
 import { formatRupiah, formatDate } from '../../utils/format';
-import { StatusBadge } from '../../components/ui/Badge';
+import { OrderStatusBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
+import { useToast } from '../../context/ToastContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 
 export default function OrderTrackingPage() {
   const { code } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
   const location = useLocation();
+  const { customer, loading: customerLoading } = useCustomerAuth();
+  const { success, error: showError } = useToast();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [settings, setSettings] = useState(null);
+  const [confirmingReceived, setConfirmingReceived] = useState(false);
 
   useEffect(() => {
     getPublicSettings()
@@ -75,6 +81,21 @@ export default function OrderTrackingPage() {
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
 
+  const handleConfirmReceived = async () => {
+    if (!order || !window.confirm('Konfirmasi bahwa pesanan ini sudah Anda terima?')) return;
+
+    setConfirmingReceived(true);
+    try {
+      await customerConfirmOrderReceived(order.order_code);
+      setOrder((current) => current ? { ...current, status: 'completed' } : current);
+      success('Pesanan ditandai selesai. Toko akan menerima pemberitahuan.');
+    } catch (err) {
+      showError(err.message || 'Tidak dapat mengonfirmasi penerimaan pesanan.');
+    } finally {
+      setConfirmingReceived(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-6">
@@ -105,8 +126,9 @@ export default function OrderTrackingPage() {
   }
 
   const steps = [
-    { key: 'new', label: 'Pesanan Dibuat', icon: Clock },
+    { key: 'new', label: 'Dibuat', icon: Clock },
     { key: 'confirmed', label: 'Dikonfirmasi', icon: Package },
+    { key: 'shipped', label: 'Dikirim', icon: Truck },
     { key: 'completed', label: 'Selesai', icon: CheckCircle },
   ];
 
@@ -114,6 +136,8 @@ export default function OrderTrackingPage() {
     order.status === 'cancelled'
       ? -1
       : order.status === 'completed'
+      ? 3
+      : order.status === 'shipped'
       ? 2
       : order.status === 'confirmed'
       ? 1
@@ -175,7 +199,7 @@ export default function OrderTrackingPage() {
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1.5">
             <span className="text-xs text-muted-text">Status Pesanan:</span>
-            <StatusBadge status={order.status} />
+            <OrderStatusBadge status={order.status} />
           </div>
         </div>
 
@@ -187,7 +211,7 @@ export default function OrderTrackingPage() {
           </div>
         ) : (
           <div className="mt-6 pt-2">
-            <div className="grid grid-cols-3 gap-2 text-center relative">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center relative">
               {steps.map((step, idx) => {
                 const Icon = step.icon;
                 const isDone = idx <= currentStepIndex;
@@ -217,6 +241,41 @@ export default function OrderTrackingPage() {
           </div>
         )}
       </div>
+
+      {order.status === 'shipped' && (
+        <div className="bg-white border border-neutral-200 rounded-sm p-5 mb-6">
+          <h3 className="font-display text-sm font-bold uppercase text-ink">
+            Pesanan sudah sampai?
+          </h3>
+          <p className="text-sm text-muted-text mt-1 mb-4">
+            Setelah barang diterima, konfirmasikan agar status pesanan menjadi Selesai dan toko mendapat pemberitahuan.
+          </p>
+          {customer ? (
+            <Button
+              variant="primary"
+              icon={CheckCircle}
+              loading={confirmingReceived}
+              onClick={handleConfirmReceived}
+            >
+              Konfirmasi Barang Diterima
+            </Button>
+          ) : !customerLoading ? (
+            <Link
+              to="/akun"
+              state={{ from: `${location.pathname}${location.search}` }}
+              className="text-sm font-bold text-brand hover:underline"
+            >
+              Masuk ke akun untuk konfirmasi barang diterima
+            </Link>
+          ) : null}
+        </div>
+      )}
+
+      {order.status === 'completed' && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4 mb-6 text-sm text-emerald-800">
+          Pesanan telah Anda konfirmasi diterima. Toko sudah diberi tahu.
+        </div>
+      )}
 
       {/* Items List */}
       <div className="bg-white border border-neutral-200 rounded-sm p-6 mb-6">
@@ -273,10 +332,21 @@ export default function OrderTrackingPage() {
                 <p className="mt-0.5 italic text-neutral-600">"{order.customer_note}"</p>
               </div>
             )}
+            {(order.courier || order.tracking_number) && (
+              <div className="mt-3 pt-3 border-t border-neutral-200 space-y-1.5">
+                <p>
+                  <strong className="text-ink">Kurir:</strong> {order.courier || '-'}
+                </p>
+                <p>
+                  <strong className="text-ink">Nomor Resi:</strong>{' '}
+                  <span className="font-mono font-semibold">{order.tracking_number || '-'}</span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Admin Note / Status Info */}
+        {/* Store Note / Status Info */}
         <div className="bg-neutral-50 border border-neutral-200 rounded-sm p-5 space-y-3">
           <h4 className="font-display text-sm font-bold uppercase tracking-wider text-ink flex items-center gap-2">
             <FileText className="w-4 h-4 text-brand" />
@@ -289,7 +359,7 @@ export default function OrderTrackingPage() {
               </div>
             ) : (
               <p className="text-muted-text italic">
-                Belum ada catatan khusus atau nomor resi dari admin. Admin akan menghubungi Anda melalui WhatsApp jika ada pembaruan pengiriman.
+                Belum ada catatan khusus dari admin.
               </p>
             )}
           </div>

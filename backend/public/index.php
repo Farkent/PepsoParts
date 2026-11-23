@@ -10,6 +10,7 @@ use Pepso\Core\Request;
 use Pepso\Core\Response;
 use Pepso\Core\Router;
 use Pepso\Middleware\AuthMiddleware;
+use Pepso\Middleware\CustomerAuthMiddleware;
 use Pepso\Middleware\CorsMiddleware;
 use Pepso\Middleware\CsrfMiddleware;
 
@@ -27,6 +28,7 @@ use Pepso\Controllers\AdminMasterController;
 use Pepso\Controllers\AdminSettingsController;
 use Pepso\Controllers\AdminOrderController;
 use Pepso\Controllers\AdminReportController;
+use Pepso\Controllers\CustomerAuthController;
 
 // 1. Muat konfigurasi .env
 Config::load(__DIR__ . '/../.env');
@@ -55,8 +57,16 @@ $router->get('/api/share/{slug}', [ProductController::class, 'shareOg']);
 
 // Pemesanan Publik & Pelacakan
 $router->post('/api/cart/validate', [OrderController::class, 'validateCart']);
-$router->post('/api/orders', [OrderController::class, 'createOrder']);
+$router->post('/api/orders', [OrderController::class, 'createOrder'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
 $router->get('/api/orders/{code}', [OrderController::class, 'trackOrder']);
+
+// Autentikasi dan dashboard pelanggan
+$router->post('/api/customer/register', [CustomerAuthController::class, 'register']);
+$router->post('/api/customer/login', [CustomerAuthController::class, 'login']);
+$router->get('/api/customer/me', [CustomerAuthController::class, 'me']);
+$router->post('/api/customer/logout', [CustomerAuthController::class, 'logout'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
+$router->get('/api/customer/orders', [CustomerAuthController::class, 'orders'], [CustomerAuthMiddleware::class]);
+$router->patch('/api/customer/orders/{code}/received', [CustomerAuthController::class, 'confirmOrderReceived'], [CustomerAuthMiddleware::class, CsrfMiddleware::class]);
 
 // Fitur AI Publik
 $router->post('/api/ai/chat', [AiController::class, 'chat']);
@@ -76,6 +86,7 @@ $router->put('/api/admin/password', [AdminAuthController::class, 'changePassword
 // ─────────────────────────────────────────────────────────────
 $router->get('/api/admin/dashboard', [AdminDashboardController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/api/admin/orders/count-new', [AdminOrderController::class, 'countNew'], [AuthMiddleware::class]);
+$router->get('/api/admin/orders/count-notifications', [AdminOrderController::class, 'countNotifications'], [AuthMiddleware::class]);
 
 // ─────────────────────────────────────────────────────────────
 // RUTE ADMIN - KELOLA PESANAN & LAPORAN
@@ -83,6 +94,8 @@ $router->get('/api/admin/orders/count-new', [AdminOrderController::class, 'count
 $router->get('/api/admin/orders', [AdminOrderController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/api/admin/orders/{id}', [AdminOrderController::class, 'show'], [AuthMiddleware::class]);
 $router->patch('/api/admin/orders/{id}/status', [AdminOrderController::class, 'updateStatus'], [AuthMiddleware::class, CsrfMiddleware::class]);
+$router->patch('/api/admin/orders/{id}/shipping', [AdminOrderController::class, 'updateShipping'], [AuthMiddleware::class, CsrfMiddleware::class]);
+$router->patch('/api/admin/orders/{id}/received-notification', [AdminOrderController::class, 'acknowledgeReceivedNotification'], [AuthMiddleware::class, CsrfMiddleware::class]);
 $router->patch('/api/admin/orders/{id}/note', [AdminOrderController::class, 'updateNote'], [AuthMiddleware::class, CsrfMiddleware::class]);
 
 $router->get('/api/admin/reports/stock', [AdminReportController::class, 'stockReport'], [AuthMiddleware::class]);

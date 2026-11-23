@@ -491,7 +491,7 @@ class ProductRepository
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) FROM order_items oi
              JOIN orders o ON o.id = oi.order_id
-             WHERE oi.product_id = :id AND o.status IN ('new', 'confirmed')"
+             WHERE oi.product_id = :id AND o.status IN ('new', 'confirmed', 'shipped')"
         );
         $stmt->execute(['id' => $id]);
         if ($stmt->fetchColumn() > 0) {

@@ -162,6 +162,7 @@ CREATE TABLE `orders` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `code` varchar(50) NOT NULL COMMENT 'PO-YYMMDD-XXXX',
   `public_token` varchar(64) NOT NULL,
+  `customer_id` bigint(20) UNSIGNED DEFAULT NULL,
   `customer_name` varchar(120) NOT NULL,
   `customer_whatsapp` varchar(30) NOT NULL,
   `customer_address` text NOT NULL,
@@ -172,6 +173,23 @@ CREATE TABLE `orders` (
   `confirmed_at` datetime DEFAULT NULL,
   `completed_at` datetime DEFAULT NULL,
   `cancelled_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `customers`
+--
+
+CREATE TABLE `customers` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `whatsapp` varchar(30) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `last_login_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -376,6 +394,13 @@ ALTER TABLE `admins`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `customers`
+--
+ALTER TABLE `customers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
 -- Indexes for table `ai_cache`
 --
 ALTER TABLE `ai_cache`
@@ -411,6 +436,7 @@ ALTER TABLE `orders`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `code` (`code`),
   ADD UNIQUE KEY `public_token` (`public_token`),
+  ADD KEY `idx_orders_customer_created` (`customer_id`,`created_at`),
   ADD KEY `idx_orders_status_created` (`status`,`created_at`);
 
 --
@@ -469,6 +495,12 @@ ALTER TABLE `admins`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `customers`
+--
+ALTER TABLE `customers`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `ai_usage_logs`
 --
 ALTER TABLE `ai_usage_logs`
@@ -520,6 +552,12 @@ ALTER TABLE `product_images`
 ALTER TABLE `order_items`
   ADD CONSTRAINT `fk_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `orders`
+--
+ALTER TABLE `orders`
+  ADD CONSTRAINT `fk_orders_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `products`

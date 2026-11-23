@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { adminGetStockReport, adminGetOrderReport } from '../../api/endpoints';
 import { formatRupiah, formatDate } from '../../utils/format';
-import { StatusBadge } from '../../components/ui/Badge';
+import { OrderStatusBadge, StatusBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Skeleton from '../../components/ui/Skeleton';
 
@@ -423,7 +423,7 @@ export default function ReportsPage() {
                             {formatRupiah(o.total_amount)}
                           </td>
                           <td className="py-2.5 px-4 text-center">
-                            <StatusBadge status={o.status} />
+                            <OrderStatusBadge status={o.status} />
                           </td>
                         </tr>
                       ))

@@ -5,9 +5,11 @@ import Badge, { StatusBadge, GradeBadge } from '../ui/Badge';
 import Button from '../ui/Button';
 import { formatRupiah } from '../../utils/format';
 import { useCart } from '../../context/CartContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 
 export default function ProductCard({ product, myMotorSlug }) {
   const { addItem } = useCart();
+  const { customer } = useCustomerAuth();
   const navigate = useNavigate();
   const hasVariants = (product.variant_count || 0) > 0;
   const isAvailable = product.status === 'available' && product.stock > 0;
@@ -20,7 +22,9 @@ export default function ProductCard({ product, myMotorSlug }) {
       navigate(`/produk/${product.slug}`);
       return;
     }
-    addItem(product);
+    if (addItem(product) && !customer) {
+      navigate('/akun', { state: { from: '/keranjang' } });
+    }
   };
 
   const primaryImage = product.primary_thumb || product.primary_image;

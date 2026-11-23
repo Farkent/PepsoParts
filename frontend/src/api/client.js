@@ -46,7 +46,13 @@ export async function apiRequest(endpoint, options = {}) {
     const json = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const err = new Error(json?.error?.message || `Request failed with status ${response.status}`);
+      const errorMessage =
+        json?.error?.message ||
+        json?.message ||
+        json?.data?.message ||
+        json?.data?.error?.message ||
+        `Request failed with status ${response.status}`;
+      const err = new Error(errorMessage);
       err.status = response.status;
       err.code = json?.error?.code || 'UNKNOWN_ERROR';
       err.fields = json?.error?.fields || {};

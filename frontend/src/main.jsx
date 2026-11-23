@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import { MotorProvider } from './context/MotorContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { CustomerAuthProvider } from './context/CustomerAuthContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <MotorProvider>
           <CartProvider>
             <AuthProvider>
-              <App />
+              <CustomerAuthProvider>
+                <App />
+              </CustomerAuthProvider>
             </AuthProvider>
           </CartProvider>
         </MotorProvider>

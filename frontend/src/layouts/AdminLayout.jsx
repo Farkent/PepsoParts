@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -17,37 +17,50 @@ import {
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../api/client';
+import { adminGetOrderNotifications } from '../api/endpoints';
+import { useToast } from '../context/ToastContext';
 
 export default function AdminLayout() {
   const { admin, logout, isAuthenticated, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { success } = useToast();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [newOrderCount, setNewOrderCount] = useState(0);
+  const [orderNotificationCount, setOrderNotificationCount] = useState(0);
+  const lastCustomerReceivedCount = useRef(null);
 
-  // Polling pesanan baru tiap 60 detik
+  // Poll pesanan baru dan konfirmasi penerimaan pelanggan tiap 10 detik.
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const fetchOrderCount = () => {
-      api.get('/admin/orders/count-new')
+      adminGetOrderNotifications()
         .then((res) => {
           if (res?.data?.count !== undefined) {
-            setNewOrderCount(res.data.count);
+            setOrderNotificationCount(Number(res.data.count) || 0);
           }
+          const receivedCount = Number(res?.data?.customer_received) || 0;
+          if (lastCustomerReceivedCount.current !== null && receivedCount > lastCustomerReceivedCount.current) {
+            const newReceivedCount = receivedCount - lastCustomerReceivedCount.current;
+            success(
+              newReceivedCount === 1
+                ? 'Pelanggan mengonfirmasi bahwa pesanan telah diterima.'
+                : `${newReceivedCount} pelanggan mengonfirmasi pesanan telah diterima.`
+            );
+          }
+          lastCustomerReceivedCount.current = receivedCount;
         })
         .catch(() => {});
     };
 
     fetchOrderCount();
-    const interval = setInterval(fetchOrderCount, 60000);
+    const interval = setInterval(fetchOrderCount, 10000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, location.pathname, success]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/admin/login', { replace: true });
+      navigate('/login?tab=admin', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
 
@@ -69,7 +82,7 @@ export default function AdminLayout() {
     { label: 'Kelola Stok', path: '/admin/stok', icon: Layers },
     { label: 'Kategori', path: '/admin/kategori', icon: FolderTree },
     { label: 'Tipe Motor', path: '/admin/tipe-motor', icon: Bike },
-    { label: 'Pesanan', path: '/admin/pesanan', icon: ShoppingCart, badge: newOrderCount > 0 ? newOrderCount : null },
+    { label: 'Pesanan', path: '/admin/pesanan', icon: ShoppingCart, badge: orderNotificationCount > 0 ? orderNotificationCount : null },
     { label: 'Laporan', path: '/admin/laporan', icon: FileBarChart },
     { label: 'Pengaturan', path: '/admin/pengaturan', icon: Settings },
   ];
@@ -77,7 +90,7 @@ export default function AdminLayout() {
   const handleLogout = async () => {
     if (confirm('Apakah Anda yakin ingin keluar dari sesi admin?')) {
       await logout();
-      navigate('/admin/login');
+      navigate('/login?tab=admin');
     }
   };
 

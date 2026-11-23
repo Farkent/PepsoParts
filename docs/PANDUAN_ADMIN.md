@@ -73,8 +73,9 @@ Ketika ada pelanggan yang melakukan checkout:
 4. Anda dapat langsung mengklik tombol **"Hubungi via WhatsApp"** untuk membuka percakapan dengan pelanggan.
 5. **Memperbarui Status Pesanan:**
    - Ubah status menjadi `Diproses (Confirmed)` setelah pembeli mentransfer dana pembayaran.
-   - Masukkan nomor resi ekspedisi pada kotak **Catatan Internal / Resi**, lalu klik **Simpan Catatan**.
-   - Ubah status menjadi `Selesai (Completed)` setelah barang diterima oleh pembeli.
+   - Setelah paket diserahkan ke kurir, isi **Kurir** dan **Nomor Resi**, lalu klik **Simpan & Tandai Dikirim**. Pelanggan dapat melihat kedua data ini pada halaman lacak pesanan.
+   - Setelah barang diterima, pelanggan mengklik **Konfirmasi Barang Diterima** di halaman lacak. Status berubah menjadi `Selesai (Completed)` dan badge **Pesanan** di admin bertambah sampai admin membuka detail pesanan tersebut.
+   - **Simpan Catatan** hanya menyimpan catatan tambahan; tombol ini tidak mengubah status dan bukan tempat mengisi nomor resi.
    - Jika pesanan dibatalkan, pilih `Batalkan (Cancelled)`: **Stok barang yang sebelumnya terkunci akan otomatis dikembalikan ke katalog!**
 
 ---

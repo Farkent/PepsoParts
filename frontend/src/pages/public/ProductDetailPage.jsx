@@ -9,6 +9,7 @@ import { getProduct, getRelatedProducts } from '../../api/endpoints';
 import { useCart } from '../../context/CartContext';
 import { useMotor } from '../../context/MotorContext';
 import { useToast } from '../../context/ToastContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { formatRupiah, buildWhatsAppUrl } from '../../utils/format';
 import Badge, { StatusBadge, GradeBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -19,6 +20,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { customer } = useCustomerAuth();
   const { selectedMotor, motorTypes, selectMotor } = useMotor();
   const { success, error: showError } = useToast();
 
@@ -106,7 +108,10 @@ export default function ProductDetailPage() {
 
   const doAddToCart = (variant) => {
     const ok = addItem(product, 1, variant);
-    if (ok) success(`${product.name}${variant ? ` (${variant.name})` : ''} ditambahkan ke keranjang.`);
+    if (ok) {
+      success(`${product.name}${variant ? ` (${variant.name})` : ''} ditambahkan ke keranjang.`);
+      if (!customer) navigate('/akun', { state: { from: '/keranjang' } });
+    }
   };
 
   const buildWaUrl = (variant = selectedVariant) => {

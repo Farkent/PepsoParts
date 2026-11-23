@@ -58,6 +58,18 @@ export function StatusBadge({ status, stock = 1 }) {
   return <Badge variant="available">TERSEDIA</Badge>;
 }
 
+export function OrderStatusBadge({ status }) {
+  const map = {
+    new: { label: 'Dibuat', variant: 'default' },
+    confirmed: { label: 'Dikonfirmasi', variant: 'brandLight' },
+    shipped: { label: 'Dikirim', variant: 'brand' },
+    completed: { label: 'Selesai', variant: 'available' },
+    cancelled: { label: 'Dibatalkan', variant: 'sold' },
+  };
+  const current = map[status] || { label: status, variant: 'default' };
+  return <Badge variant={current.variant}>{current.label}</Badge>;
+}
+
 export function GradeBadge({ grade, percent }) {
   const map = {
     excellent: { label: 'Mulus', variant: 'gradeExcellent' },

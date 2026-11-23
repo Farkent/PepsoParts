@@ -150,13 +150,14 @@ class OrderRepository
             // Insert order
             $stmt = $this->db->prepare(
                 "INSERT INTO orders
-                    (code, public_token, customer_name, customer_whatsapp,
+                    (code, public_token, customer_id, customer_name, customer_whatsapp,
                      customer_address, customer_note, total_amount, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'new')"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')"
             );
             $stmt->execute([
                 $orderCode,
                 $publicToken,
+                $data['customer_id'] ?? null,
                 $data['customer_name'],
                 $data['customer_whatsapp'],
                 $data['customer_address'],
@@ -196,7 +197,9 @@ class OrderRepository
                 'total_amount' => $totalAmount,
             ];
         } catch (\Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
     }
@@ -268,6 +271,32 @@ class OrderRepository
         return $withItems ? $this->hydrateOrder($row) : $row;
     }
 
+    public function findAdminByCode(string $code): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT o.*, o.code as order_code, GROUP_CONCAT(
+                JSON_OBJECT(
+                    'id', oi.id,
+                    'product_id', oi.product_id,
+                    'product_code', oi.product_code,
+                    'product_name', oi.product_name,
+                    'variant_name', oi.variant_name,
+                    'unit_price', oi.unit_price,
+                    'quantity', oi.quantity,
+                    'subtotal', oi.subtotal
+                )
+             ) as items_json
+             FROM orders o
+             LEFT JOIN order_items oi ON oi.order_id = o.id
+             WHERE o.code = ?
+             GROUP BY o.id"
+        );
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $this->hydrateOrder($row) : null;
+    }
+
     // ─── Admin Search / List ──────────────────────────────────────────────────
 
     public function search(array $params): array
@@ -325,14 +354,25 @@ class OrderRepository
 
     /**
      * Valid transitions: new→confirmed, new→cancelled
-     *                    confirmed→completed, confirmed→cancelled
+     *                    confirmed→shipped, confirmed→cancelled
+     *                    shipped→completed
      */
     public function updateStatus(int $id, string $newStatus): bool
     {
+        return $this->updateStatusByIdentifier('id', $id, $newStatus);
+    }
+
+    public function updateStatusByCode(string $code, string $newStatus): bool
+    {
+        return $this->updateStatusByIdentifier('code', $code, $newStatus);
+    }
+
+    private function updateStatusByIdentifier(string $column, int|string $identifier, string $newStatus): bool
+    {
         $this->db->beginTransaction();
         try {
-            $stmt = $this->db->prepare("SELECT status FROM orders WHERE id = ? FOR UPDATE");
-            $stmt->execute([$id]);
+            $stmt = $this->db->prepare("SELECT id, status FROM orders WHERE {$column} = ? FOR UPDATE");
+            $stmt->execute([$identifier]);
             $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$order) {
@@ -344,7 +384,8 @@ class OrderRepository
 
             $allowedTransitions = [
                 'new'       => ['confirmed', 'cancelled'],
-                'confirmed' => ['completed', 'cancelled'],
+                'confirmed' => ['cancelled'],
+                'shipped'   => ['completed'],
             ];
 
             if (!isset($allowedTransitions[$currentStatus]) ||
@@ -357,7 +398,15 @@ class OrderRepository
 
             // Restore stock if cancelling a confirmed order
             if ($newStatus === 'cancelled' && $currentStatus === 'confirmed') {
-                $this->restoreStock($id);
+                $idCount = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE id = ?");
+                $idCount->execute([(int)$order['id']]);
+                if ((int)$idCount->fetchColumn() > 1) {
+                    $this->db->rollBack();
+                    throw new RuntimeException(
+                        'Pesanan tidak dapat dibatalkan karena ID database duplikat; perbaiki data pesanan terlebih dahulu.'
+                    );
+                }
+                $this->restoreStock((int)$order['id']);
             }
 
             $timestampCol = match ($newStatus) {
@@ -367,15 +416,164 @@ class OrderRepository
                 default     => null,
             };
 
-            $sql = "UPDATE orders SET status = ?" . ($timestampCol ? ", {$timestampCol}" : '') . " WHERE id = ?";
-            $this->db->prepare($sql)->execute([$newStatus, $id]);
+            $sql = "UPDATE orders SET status = ?" . ($timestampCol ? ", {$timestampCol}" : '') . " WHERE {$column} = ?";
+            $this->db->prepare($sql)->execute([$newStatus, $identifier]);
 
             $this->db->commit();
             return true;
         } catch (\Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
+    }
+
+    public function updateShipping(int $id, string $courier, string $trackingNumber): bool
+    {
+        return $this->updateShippingByIdentifier('id', $id, $courier, $trackingNumber);
+    }
+
+    public function updateShippingByCode(string $code, string $courier, string $trackingNumber): bool
+    {
+        return $this->updateShippingByIdentifier('code', $code, $courier, $trackingNumber);
+    }
+
+    private function updateShippingByIdentifier(
+        string $column,
+        int|string $identifier,
+        string $courier,
+        string $trackingNumber
+    ): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("SELECT status FROM orders WHERE {$column} = ? FOR UPDATE");
+            $stmt->execute([$identifier]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$order) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            if (!in_array($order['status'], ['confirmed', 'shipped'], true)) {
+                $this->db->rollBack();
+                throw new RuntimeException('Informasi pengiriman hanya dapat diisi untuk pesanan yang dikonfirmasi atau dikirim.');
+            }
+
+            $statusUpdate = $order['status'] === 'confirmed' ? ", status = 'shipped'" : '';
+            $this->db->prepare(
+                "UPDATE orders SET courier = ?, tracking_number = ?{$statusUpdate} WHERE {$column} = ?"
+            )->execute([$courier, $trackingNumber, $identifier]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function confirmOrderReceived(int $customerId, string $code): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT id, status FROM orders WHERE code = ? AND customer_id = ? FOR UPDATE"
+            );
+            $stmt->execute([$code, $customerId]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$order) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            if ($order['status'] !== 'shipped') {
+                $this->db->rollBack();
+                throw new RuntimeException('Pesanan hanya dapat diselesaikan setelah berstatus Dikirim.');
+            }
+
+            $this->db->prepare(
+                "UPDATE orders
+                 SET status = 'completed', completed_at = NOW(), admin_received_notified_at = NULL
+                 WHERE id = ?"
+            )->execute([(int)$order['id']]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function acknowledgeReceivedNotification(int $id): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE orders
+             SET admin_received_notified_at = NOW()
+             WHERE id = ? AND status = 'completed' AND admin_received_notified_at IS NULL"
+        );
+        $stmt->execute([$id]);
+
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        $check = $this->db->prepare(
+            "SELECT status, admin_received_notified_at FROM orders WHERE id = ?"
+        );
+        $check->execute([$id]);
+        $order = $check->fetch(PDO::FETCH_ASSOC);
+
+        return $order && $order['status'] === 'completed' && $order['admin_received_notified_at'] !== null;
+    }
+
+    public function acknowledgeReceivedNotificationByCode(string $code): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE orders
+             SET admin_received_notified_at = NOW()
+             WHERE code = ? AND status = 'completed' AND admin_received_notified_at IS NULL"
+        );
+        $stmt->execute([$code]);
+
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        $check = $this->db->prepare(
+            "SELECT status, admin_received_notified_at FROM orders WHERE code = ?"
+        );
+        $check->execute([$code]);
+        $order = $check->fetch(PDO::FETCH_ASSOC);
+
+        return $order && $order['status'] === 'completed' && $order['admin_received_notified_at'] !== null;
+    }
+
+    public function countAdminNotifications(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT
+                COUNT(CASE WHEN status = 'new' THEN 1 END) AS new_orders,
+                COUNT(CASE WHEN status = 'completed' AND admin_received_notified_at IS NULL THEN 1 END) AS customer_received"
+            . " FROM orders"
+        );
+        $counts = $stmt->fetch(PDO::FETCH_ASSOC);
+        $newOrders = (int)$counts['new_orders'];
+        $customerReceived = (int)$counts['customer_received'];
+
+        return [
+            'count' => $newOrders + $customerReceived,
+            'new_orders' => $newOrders,
+            'customer_received' => $customerReceived,
+        ];
     }
 
     private function restoreStock(int $orderId): void
@@ -420,6 +618,12 @@ class OrderRepository
     {
         $stmt = $this->db->prepare("UPDATE orders SET admin_note = ? WHERE id = ?");
         return $stmt->execute([$note, $id]);
+    }
+
+    public function updateNoteByCode(string $code, string $note): bool
+    {
+        $stmt = $this->db->prepare("UPDATE orders SET admin_note = ? WHERE code = ?");
+        return $stmt->execute([$note, $code]);
     }
 
     // ─── Badge Count ─────────────────────────────────────────────────────────

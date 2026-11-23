@@ -1,6 +1,6 @@
 # Diagram Relasi Entitas (ERD) & Kamus Data — PEPSO PARTS
 
-Dokumen ini mendokumentasikan skema basis data MariaDB 10.4.32 / MySQL untuk sistem **PEPSO PARTS**. Basis data terdiri dari 12 tabel terindeks dengan integritas relasional *Foreign Key*.
+Dokumen ini mendokumentasikan skema basis data MariaDB 10.4.32 / MySQL untuk sistem **PEPSO PARTS**. Basis data terdiri dari 13 tabel terindeks dengan integritas relasional *Foreign Key*.
 
 ---
 
@@ -14,12 +14,24 @@ erDiagram
     products ||--o{ product_motor_types : "has"
     products ||--o{ product_images : "contains"
     products ||--o{ order_items : "purchased_in"
+    customers ||--o{ orders : "places"
     orders ||--o{ order_items : "includes"
 
     admins {
         int id PK
         string name
         string email UK
+        string password_hash
+        datetime last_login_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    customers {
+        int id PK
+        string name
+        string email UK
+        string whatsapp
         string password_hash
         datetime last_login_at
         datetime created_at
@@ -93,6 +105,7 @@ erDiagram
         int id PK
         string code UK
         string public_token
+        int customer_id FK
         string customer_name
         string customer_phone
         string customer_whatsapp
@@ -228,10 +241,13 @@ Transaksi pesanan belanja pelanggan.
 - `customer_address` (TEXT): Alamat lengkap tujuan pengiriman.
 - `customer_notes` (TEXT): Catatan pembeli (contoh: minta bubble wrap tebal).
 - `total_amount` (DECIMAL(12,2)): Total nominal belanja.
-- `status` (ENUM): `new` (Menunggu Konfirmasi), `confirmed` (Diproses), `completed` (Selesai), `cancelled` (Dibatalkan).
+- `status` (ENUM): `new` (Dibuat), `confirmed` (Dikonfirmasi), `shipped` (Dikirim), `completed` (Selesai), `cancelled` (Dibatalkan).
 - `payment_method` (VARCHAR(50)): Metode pembayaran (`bank_transfer`, `cod_sentul`).
 - `shipping_method` (VARCHAR(50)): Pilihan kurir (`jne_reg`, `jnt`, `ambil_di_bengkel`).
-- `admin_note` (TEXT): Catatan admin toko atau nomor resi pengiriman ekspedisi.
+- `courier` (VARCHAR(100)): Nama kurir pengiriman.
+- `tracking_number` (VARCHAR(100)): Nomor resi yang ditampilkan pada halaman lacak pesanan.
+- `admin_received_notified_at` (DATETIME): Waktu admin meninjau konfirmasi barang diterima pelanggan.
+- `admin_note` (TEXT): Catatan admin toko.
 
 ### 2.8 `order_items`
 Rincian item barang di dalam sebuah pesanan.
@@ -271,4 +287,14 @@ Pelacak frekuensi akses IP untuk proteksi brute-force login.
 - `limit_key` (VARCHAR(100), PK): Kunci identitas per IP dan aksi.
 - `hits` (INT): Jumlah percobaan dalam jendela waktu aktif.
 - `window_start` (DATETIME): Waktu awal pembukaan jendela pembatasan.
+
+### 2.13 `customers`
+Akun pelanggan untuk masuk, mendaftar, dan melihat riwayat pesanan.
+- `id` (BIGINT, PK, Auto Increment)
+- `name` (VARCHAR(100)): Nama pelanggan.
+- `email` (VARCHAR(150), UNIQUE): Email untuk masuk.
+- `whatsapp` (VARCHAR(30)): Nomor WhatsApp akun.
+- `password_hash` (VARCHAR(255)): Hash kata sandi Bcrypt.
+- `last_login_at`, `created_at`, `updated_at` (DATETIME).
+- `orders.customer_id` menghubungkan pesanan ke akun dan menjadi `NULL` bila akun dihapus.
 

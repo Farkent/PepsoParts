@@ -4,7 +4,7 @@ Sistem API backend **PEPSO PARTS** dibangun menggunakan PHP 8.2+ Native dengan p
 
 - **Base URL Pengembangan:** `http://localhost:8000/api` (atau proxied via Vite pada `http://localhost:5173/api`)
 - **Format Pertukaran Data:** JSON (`Content-Type: application/json; charset=utf-8`)
-- **Autentikasi Admin:** Cookie-based session (`pepso_session`) + Header `X-CSRF-Token` pada seluruh mutasi (`POST`, `PUT`, `PATCH`, `DELETE`).
+- **Autentikasi:** Cookie-based session (`pepso_session`); mutasi akun dan pesanan memerlukan Header `X-CSRF-Token`.
 
 ---
 
@@ -96,6 +96,7 @@ Sistem API backend **PEPSO PARTS** dibangun menggunakan PHP 8.2+ Native dengan p
   - **Payload:** `{"items": [{"product_id": 1, "quantity": 1}]}`
   - **Deskripsi:** Memvalidasi ketersediaan stok produk sebelum checkout.
 - **`POST /api/orders`**
+  - **Autentikasi:** Sesi pelanggan aktif dan header `X-CSRF-Token`.
   - **Payload:**
     ```json
     {
@@ -116,7 +117,18 @@ Sistem API backend **PEPSO PARTS** dibangun menggunakan PHP 8.2+ Native dengan p
 - **`GET /api/orders/{code}?token={public_token}`**
   - **Deskripsi:** Melacak status pesanan publik pelanggan secara aman.
 
-### 2.5 Fitur Cerdas (AI API)
+### 2.5 Akun Pelanggan
+- **`POST /api/customer/register`**
+  - **Payload:** `{"name":"Budi Santoso","email":"budi@example.com","whatsapp":"081234567890","password":"minimal8karakter"}`
+  - Membuat akun pelanggan dan langsung memulai sesi. Pendaftaran dibatasi 5 kali per jam per alamat IP.
+- **`POST /api/customer/login`**
+  - **Payload:** `{"email":"budi@example.com","password":"..."}`
+  - Rate limit 5 percobaan per 5 menit.
+- **`GET /api/customer/me`** — Mengambil profil akun dan token CSRF sesi.
+- **`POST /api/customer/logout`** — Mengakhiri sesi pelanggan; membutuhkan header `X-CSRF-Token`.
+- **`GET /api/customer/orders`** — Riwayat pesanan milik akun yang sedang masuk.
+
+### 2.6 Fitur Cerdas (AI API)
 - **`POST /api/ai/chat`**
   - **Payload:**
     ```json
@@ -175,8 +187,12 @@ Seluruh rute ini mewajibkan sesi aktif admin dan header `X-CSRF-Token` pada aksi
 ### 3.4 Manajemen Pesanan
 - **`GET /api/admin/orders`** — Daftar pesanan masuk dengan filter status, tanggal, dan pencarian nama/telepon.
 - **`GET /api/admin/orders/{id}`** — Detail pesanan lengkap dan rincian item.
-- **`PATCH /api/admin/orders/{id}/status`** — Mengubah status pesanan (`new`, `confirmed`, `completed`, `cancelled`).
-- **`PATCH /api/admin/orders/{id}/note`** — Menyimpan catatan internal toko / nomor resi pengiriman.
+- **`PATCH /api/admin/orders/{id}/status`** — Admin mengonfirmasi atau membatalkan pesanan. Status `completed` hanya dapat diatur pelanggan setelah pesanan dikirim.
+- **`PATCH /api/admin/orders/{id}/shipping`** — Menyimpan `courier` dan `tracking_number`; pesanan `confirmed` otomatis menjadi `shipped`.
+- **`PATCH /api/customer/orders/{code}/received`** — Pelanggan pemilik pesanan mengonfirmasi barang diterima; pesanan `shipped` menjadi `completed`.
+- **`GET /api/admin/orders/count-notifications`** — Jumlah pesanan baru dan konfirmasi penerimaan pelanggan yang belum ditinjau admin.
+- **`PATCH /api/admin/orders/{id}/received-notification`** — Menandai pemberitahuan konfirmasi penerimaan pelanggan sudah ditinjau.
+- **`PATCH /api/admin/orders/{id}/note`** — Menyimpan catatan tambahan dari admin.
 - **`GET /api/admin/orders/count-new`** — Mengambil jumlah pesanan berstatus `new` untuk penanda lencana notifikasi.
 
 ### 3.5 Manajemen Master Data & Pengaturan Toko
